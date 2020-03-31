@@ -29,15 +29,14 @@ int main(int argc,char* argv[])
   MPI_Comm_rank(PETSC_COMM_WORLD,&my_rank);
   
   build_geom(&geom);
-  build_equil(&equil,&geom);
 
+  build_equil(&equil,&geom);
 
   if(my_rank==0)
     {
       if ( geom.write_equil == 1 ){ save_equil_full(geom,equil); }
       else { save_equil_part(geom,equil); }
     }
-
   
   /***************************************************************************************************************************************************************************************/
   /***************************************************************************************************************************************************************************************/
@@ -51,14 +50,14 @@ int main(int argc,char* argv[])
       
       if(geom.Hall_on == 1){
 	mats = new Mat[3];
-	mats[0] = E ; mats[1] = H ; mats[2] = F ;
+	mats[0] = F ; mats[1] = H ; mats[2] = E ;
       }
       else{
 	mats = new Mat[2];
-	mats[0] = E ; mats[1] = F ;
+	mats[0] = F ; mats[1] = E ;
       }
 
-      //load_mats( geom , mats ) ; Needs updating
+      load_mats( geom , mats ) ;
 
     }
   else
@@ -92,19 +91,32 @@ int main(int argc,char* argv[])
 
       //delete_full_matrix_coeffs(&coeffs);
 
-      //make_hermitian(&A,dim);
-      //make_hermitian(&B,dim);
+      /*
+      make_hermitian(&E,dim);
+      if(geom.Hall_on == 1){
+	make_hermitian(&H,dim);
+      }
+      make_hermitian(&F,dim);
+      */
 
-      //ierr = MatView(E,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-      //ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-      //ierr = MatView(F,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-
-      //calc_hermitian_diff(A,dim,dim);
-      //calc_hermitian_diff(B,dim,dim);
+      /*
+      calc_hermitian_diff(E,dim,dim);
+      if(geom.Hall_on == 1){
+	calc_hermitian_diff(H,dim,dim);
+      }
+      calc_hermitian_diff(F,dim,dim);
+      */
 
       if(!(geom.write_mats==0)){ save_mats( geom , mats ); }
     }
-    
+
+  /*
+  ierr = MatView(E,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  if(geom.Hall_on == 1){
+    ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  }
+  ierr = MatView(F,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  */
 
   clock_t time1;
   if( my_rank == 0 ){ time1 = clock() ;}

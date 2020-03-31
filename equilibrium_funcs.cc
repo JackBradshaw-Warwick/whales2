@@ -68,7 +68,7 @@ double dens(double psi, double theta)
   double psi_d=0.2;
   double prop=0.5;
 
-  return 1.0 ;//* ( 1.0 + prop * exp ( - pow( ( psi - psi_0 ) / psi_d , 2 ) ) );  //pow(1.0 - (psi/1.47)*(psi/1.47),0.4); //flux_max*flux_max*flux_max*flux_max*flux_max*flux_max-0.8*psi*psi*psi*psi*psi*psi;
+  return ion_mass * 1.0e19 ;//* ( 1.0 + prop * exp ( - pow( ( psi - psi_0 ) / psi_d , 2 ) ) );  //pow(1.0 - (psi/1.47)*(psi/1.47),0.4); //flux_max*flux_max*flux_max*flux_max*flux_max*flux_max-0.8*psi*psi*psi*psi*psi*psi;
 }
 
 double pres(double psi, double theta)

@@ -150,9 +150,6 @@ int save_equil_part(geom_shape geom,equil_fields equil)
 	alf_freq[m_count*N_psi*(N_theta+1)+iii*(N_theta+1)+jjj]=k_par[m_count*N_psi*(N_theta+1)+iii*(N_theta+1)+jjj]*alf_vel[m_count*N_psi*(N_theta+1)+iii*(N_theta+1)+jjj];
 	alf_freq[m_count*N_psi*(N_theta+1)+iii*(N_theta+1)+N_theta]=alf_freq[m_count*N_psi*(N_theta+1)+iii*(N_theta+1)];
       }}}
-
-
-     
     
   /***************************************************************************************************************************************************************************************/
   /***************************************************************************************************************************************************************************************/
@@ -162,7 +159,7 @@ int save_equil_part(geom_shape geom,equil_fields equil)
   herr_t status;
 
   std::stringstream filepath;
-  filepath << geom.output_dir << geom.equil_filename ; 
+  filepath << geom.output_dir << geom.equil_filename ;
       
   //Create HDF5 datafile
   file_id = H5Fcreate(filepath.str().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT); //Overwrite file if it already exists
@@ -327,14 +324,14 @@ int load_mats(geom_shape geom , Mat mats[] )
 {
   int ierr;
   
-  std::stringstream tmp_filename_E;
-  tmp_filename_E <<  geom.mats_dir << geom.mats_filename << "_E.dat"; 
+  std::stringstream tmp_filename_F;
+  tmp_filename_F << geom.mats_dir << geom.mats_filename << "_F.dat"; 
 	
-  PetscViewer mat_in_E;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_E.str().c_str(),FILE_MODE_READ,&mat_in_E); CHKERRQ(ierr);
-  ierr = MatLoad(mats[0],mat_in_E);CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&mat_in_E); CHKERRQ(ierr);
-
+  PetscViewer mat_in_F;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_F.str().c_str(),FILE_MODE_READ,&mat_in_F); CHKERRQ(ierr);
+  ierr = MatLoad(mats[0],mat_in_F);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&mat_in_F); CHKERRQ(ierr);
+ 
   ierr = MatAssemblyBegin(mats[0],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(mats[0],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
@@ -357,15 +354,14 @@ int load_mats(geom_shape geom , Mat mats[] )
     counter=1;
   }
 
-
-  std::stringstream tmp_filename_F;
-  tmp_filename_F << geom.mats_dir << geom.mats_filename << "_F.dat"; 
+  std::stringstream tmp_filename_E;
+  tmp_filename_E <<  geom.mats_dir << geom.mats_filename << "_E.dat"; 
 	
-  PetscViewer mat_in_F;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_F.str().c_str(),FILE_MODE_READ,&mat_in_F); CHKERRQ(ierr);
-  ierr = MatLoad(mats[counter],mat_in_F);CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&mat_in_F); CHKERRQ(ierr);
- 
+  PetscViewer mat_in_E;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_E.str().c_str(),FILE_MODE_READ,&mat_in_E); CHKERRQ(ierr);
+  ierr = MatLoad(mats[counter],mat_in_E);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&mat_in_E); CHKERRQ(ierr);
+
   ierr = MatAssemblyBegin(mats[counter],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(mats[counter],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
@@ -378,13 +374,15 @@ int save_mats(geom_shape geom , Mat mats[] )
 {
   int ierr;
 
-  std::stringstream tmp_filename_E;
-  tmp_filename_E <<  geom.mats_dir << geom.mats_filename << "_E.dat"; 
+  std::stringstream tmp_filename_F;
+  tmp_filename_F << geom.mats_dir << geom.mats_filename << "_F.dat"; 
 	
-  PetscViewer mat_out_E;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_E.str().c_str(),FILE_MODE_WRITE,&mat_out_E); CHKERRQ(ierr);
-  ierr = MatView(mats[0],mat_out_E);CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&mat_out_E); CHKERRQ(ierr);
+  PetscViewer mat_out_F;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_F.str().c_str(),FILE_MODE_WRITE,&mat_out_F); CHKERRQ(ierr);
+  ierr = MatView(mats[0],mat_out_F);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&mat_out_F); CHKERRQ(ierr);
+  
+  
 
   int counter;
   if(geom.Hall_on==1){
@@ -402,15 +400,15 @@ int save_mats(geom_shape geom , Mat mats[] )
     counter=1;
   }
 
-  std::stringstream tmp_filename_F;
-  tmp_filename_F << geom.mats_dir << geom.mats_filename << "_F.dat"; 
-	
-  PetscViewer mat_out_F;
-  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_F.str().c_str(),FILE_MODE_WRITE,&mat_out_F); CHKERRQ(ierr);
-  ierr = MatView(mats[counter],mat_out_F);CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&mat_out_F); CHKERRQ(ierr);
-
-  std::cout << "Mats read" << std::endl;
+  std::stringstream tmp_filename_E;
+  tmp_filename_E <<  geom.mats_dir << geom.mats_filename << "_E.dat";
+  
+  PetscViewer mat_out_E;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,tmp_filename_E.str().c_str(),FILE_MODE_WRITE,&mat_out_E); CHKERRQ(ierr);
+  ierr = MatView(mats[counter],mat_out_E);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&mat_out_E); CHKERRQ(ierr);
+  
+  std::cout << "Mats saved" << std::endl;
 
   return ierr;
 }

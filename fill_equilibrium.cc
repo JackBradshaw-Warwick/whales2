@@ -150,7 +150,6 @@ int fill_whales(equil_fields *equil,geom_shape *geom)
       
   //Open HDF5 datafile
   file_id = H5Fopen(filepath.str().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
   
   hid_t eqgroup_id, N_psi_id, N_theta_id, num_quad_id, m_min_id, m_max_id, m_coup_id, tor_mod_id, shape_order_id, deriv_order_id, interp_order_id;
   
@@ -300,6 +299,8 @@ int fill_whales(equil_fields *equil,geom_shape *geom)
   rad_var_id = H5Dopen2( gridgroup_id , "rad_var" , H5P_DEFAULT );  
   status = H5Dread( rad_var_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, equil->rad_var );
   status = H5Dclose( rad_var_id );
+
+  status = H5Gclose(gridgroup_id);
    
   status = H5Fclose(file_id);
 
