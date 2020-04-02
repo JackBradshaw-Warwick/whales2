@@ -51,13 +51,12 @@ void init_coeffs(matrix_coeffs* coeffs,geom_shape geom)
   coeffs->f_dpp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dpp,N_interp*N_theta);
   coeffs->f_pdp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pdp,N_interp*N_theta);
   coeffs->f_pp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pp,N_interp*N_theta);
+  coeffs->f_dpdw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dpdw,N_interp*N_theta);
   coeffs->f_dpw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dpw,N_interp*N_theta);
   coeffs->f_pw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pw,N_interp*N_theta);
-  coeffs->f_dwdp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dwdp,N_interp*N_theta);
-  coeffs->f_dwp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dwp,N_interp*N_theta);
   coeffs->f_wdp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_wdp,N_interp*N_theta);
   coeffs->f_wp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_wp,N_interp*N_theta);
-  coeffs->f_dww=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dww,N_interp*N_theta);
+  coeffs->f_wdw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_wdw,N_interp*N_theta);
   coeffs->f_ww=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_ww,N_interp*N_theta);
 }
 
@@ -124,13 +123,12 @@ void delete_full_matrix_coeffs(matrix_coeffs* coeffs)
   delete[] coeffs->f_dpp; coeffs->f_dpp=NULL;
   delete[] coeffs->f_pdp; coeffs->f_pdp=NULL;
   delete[] coeffs->f_pp; coeffs->f_pp=NULL;
+  delete[] coeffs->f_dpdw; coeffs->f_dpdw=NULL;
   delete[] coeffs->f_dpw; coeffs->f_dpw=NULL;
   delete[] coeffs->f_pw; coeffs->f_pw=NULL;
-  delete[] coeffs->f_dwdp; coeffs->f_dwdp=NULL;
-  delete[] coeffs->f_dwp; coeffs->f_dwp=NULL;
   delete[] coeffs->f_wdp; coeffs->f_wdp=NULL;
   delete[] coeffs->f_wp; coeffs->f_wp=NULL;
-  delete[] coeffs->f_dww; coeffs->f_dww=NULL;
+  delete[] coeffs->f_wdw; coeffs->f_wdw=NULL;
   delete[] coeffs->f_ww; coeffs->f_ww=NULL;
 }
 
