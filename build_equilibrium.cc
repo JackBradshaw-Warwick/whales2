@@ -420,6 +420,10 @@ void build_equil_funcs(equil_fields *equil,geom_shape geom)
 
   fill_cc(equil,N_interp,N_theta);
 
+  if(geom.Hall_on == 1){
+    for(int iii=0;iii<N_interp*N_theta;iii++){ equil->pres[iii] = 0.0 ; }
+  }
+
 }
 
 
