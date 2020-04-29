@@ -673,7 +673,6 @@ void print_grid(double grid[],int N_psi,int N_theta)
 void print_grid(std::complex<double> grid[],int N_psi,int N_theta)
 {
   double max=0.0;
-  std::complex<double> imag_unit=1.0i;
    for(int iii=0;iii<N_psi*N_theta;iii++)
     {
       if(std::abs(grid[iii])>max){max=std::abs(grid[iii]);}

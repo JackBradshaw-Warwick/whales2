@@ -4,7 +4,7 @@ void deriv_1d(double deriv_grid[],double dep_var[],double ind_var[],int num_poin
 {
   clean_grid(deriv_grid,num_points);
   
-  double diff_grid[num_points-1];
+  double *diff_grid = new double[num_points-1];
   for(int iii=0;iii<num_points-1;iii++){diff_grid[iii]=ind_var[iii+1]-ind_var[iii];}
 
   if(order=="Linear")
@@ -54,6 +54,8 @@ void deriv_1d(double deriv_grid[],double dep_var[],double ind_var[],int num_poin
 	}
     }
   else{std::cout << "That is not a valid order" << std::endl;}
+
+  delete[] diff_grid;
 }
 
 
@@ -61,8 +63,8 @@ void deriv_1d(double deriv_grid[],double dep_var[],double ind_var[],int num_ind,
 {
   clean_grid(deriv_grid,num_ind*num_ignor);
   
-  double dep_temp[num_ind]={};
-  double deriv_temp[num_ind]={};
+  double *dep_temp = new double[num_ind];
+  double *deriv_temp = new double[num_ind];
   
   if(ind_first==true)
     {
@@ -80,6 +82,9 @@ void deriv_1d(double deriv_grid[],double dep_var[],double ind_var[],int num_ind,
 	for(int jjj=0;jjj<num_ind;jjj++){deriv_grid[iii*num_ind+jjj]=deriv_temp[jjj];}
       }	
     }
+
+  delete[] dep_temp;
+  delete[] deriv_temp;
 }
 
 
@@ -88,7 +93,7 @@ void deriv_1d(std::complex<double> deriv_grid[],std::complex<double> dep_var[],d
 {
   clean_grid(deriv_grid,num_points);
   
-  double diff_grid[num_points-1];
+  double *diff_grid = new double[num_points-1];
   for(int iii=0;iii<num_points-1;iii++){diff_grid[iii]=ind_var[iii+1]-ind_var[iii];}
 
   if(order=="Linear")
@@ -121,6 +126,8 @@ void deriv_1d(std::complex<double> deriv_grid[],std::complex<double> dep_var[],d
 	}
     }
   else{std::cout << "That is not a valid order" << std::endl;}
+
+  delete[] diff_grid;
 }
 
 
@@ -129,8 +136,8 @@ void deriv_1d(std::complex<double> deriv_grid[],std::complex<double> dep_var[],d
 {
   clean_grid(deriv_grid,num_ind*num_ignor);
   
-  std::complex<double> dep_temp[num_ind]={};
-  std::complex<double> deriv_temp[num_ind]={};
+  std::complex<double> *dep_temp = new std::complex<double>[num_ind];
+  std::complex<double> *deriv_temp = new std::complex<double>[num_ind];
   
   if(ind_first==true)
     {
@@ -148,6 +155,9 @@ void deriv_1d(std::complex<double> deriv_grid[],std::complex<double> dep_var[],d
 	for(int jjj=0;jjj<num_ind;jjj++){deriv_grid[iii*num_ind+jjj]=deriv_temp[jjj];}
       }	
     }
+
+  delete[] dep_temp;
+  delete[] deriv_temp;
 }
 
 
@@ -240,7 +250,7 @@ void deriv_ang(double deriv_grid[],double dep_var[],double ind_var[],int num_poi
     
   fftw_complex *out_r2c;  out_r2c = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
   fftw_plan plan_r2c;
-  double in_r2c[num_points];
+  double *in_r2c = new double[num_points];
  
   
   plan_r2c = fftw_plan_dft_r2c_1d(num_points, in_r2c, out_r2c, FFTW_ESTIMATE);
@@ -255,7 +265,7 @@ void deriv_ang(double deriv_grid[],double dep_var[],double ind_var[],int num_poi
 
   fftw_complex *in_c2r; in_c2r = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
   fftw_plan plan_c2r;
-  double out_c2r[num_points];
+  double *out_c2r = new double[num_points];
 
   plan_c2r = fftw_plan_dft_c2r_1d(num_points, in_c2r, out_c2r, FFTW_ESTIMATE);
 
@@ -270,14 +280,16 @@ void deriv_ang(double deriv_grid[],double dep_var[],double ind_var[],int num_poi
 
   fftw_destroy_plan(plan_c2r);
   fftw_free(in_c2r);
+  delete[] in_r2c;
+  delete[] out_c2r;
 }
 
 void deriv_ang(double deriv_grid[],double dep_var[],double ind_var[],int num_ind,int num_ignor,bool ind_first)
 {
   clean_grid(deriv_grid,num_ind*num_ignor);
   
-  double dep_temp[num_ind];
-  double deriv_temp[num_ind];
+  double *dep_temp = new double[num_ind];
+  double *deriv_temp = new double[num_ind];
 
   if(ind_first==true)
     {
@@ -295,6 +307,9 @@ void deriv_ang(double deriv_grid[],double dep_var[],double ind_var[],int num_ind
 	for(int jjj=0;jjj<num_ind;jjj++){deriv_grid[iii*num_ind+jjj]=deriv_temp[jjj];}
       }	
     }
+
+  delete[] dep_temp;
+  delete[] deriv_temp;
 }
 
 
@@ -305,7 +320,6 @@ void deriv_ang(std::complex<double> deriv_grid[],std::complex<double> dep_var[],
   fftw_complex *out_r2c;  out_r2c = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * num_points);
   fftw_complex *in_r2c;  in_r2c = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * num_points);
   fftw_plan plan_r2c;
-  std::complex<double> imag_unit=1.0i;
 
   plan_r2c = fftw_plan_dft_1d(num_points, in_r2c, out_r2c,FFTW_FORWARD, FFTW_ESTIMATE);
 
@@ -346,8 +360,8 @@ void deriv_ang(std::complex<double> deriv_grid[],std::complex<double> dep_var[],
 {
   clean_grid(deriv_grid,num_ind*num_ignor);
   
-  std::complex<double> dep_temp[num_ind];
-  std::complex<double> deriv_temp[num_ind];
+  std::complex<double> *dep_temp = new std::complex<double>[num_ind];
+  std::complex<double> *deriv_temp = new std::complex<double>[num_ind];
 
   if(ind_first==true)
     {
@@ -365,6 +379,9 @@ void deriv_ang(std::complex<double> deriv_grid[],std::complex<double> dep_var[],
 	for(int jjj=0;jjj<num_ind;jjj++){deriv_grid[iii*num_ind+jjj]=deriv_temp[jjj];}
       }	
     }
+
+  delete[] dep_temp;
+  delete[] deriv_temp;
 }
 
 
@@ -636,7 +653,6 @@ std::complex<double> dpol_xi(std::complex<double> *funcs_fourier[],bool fg_sym[]
     }
 
   //Multiply by i
-  std::complex<double> imag_unit=1.0i;
   result*=imag_unit;
 
   return result;
@@ -656,7 +672,7 @@ std::complex<double> dpol_sq_xi(std::complex<double> *funcs_fourier[], int main_
 
   bool fg_sym[2]={true,true};
 
-  std::complex<double> first_deriv[N_psi*fourier_size_full]; //This is wasteful as mostly matrix will be zeroes - this is to facilitate use with fdgxi, but should be amended to something more efficient in future versions
+  std::complex<double> *first_deriv = new std::complex<double>[N_psi*fourier_size_full]; //This is wasteful as mostly matrix will be zeroes - this is to facilitate use with fdgxi, but should be amended to something more efficient in future versions
   for(int iii=0;iii<N_psi*fourier_size_full;iii++){first_deriv[iii]=0.0;}
   
   for(int m_prime=0;m_prime<fourier_size_full;m_prime++)
@@ -672,6 +688,8 @@ std::complex<double> dpol_sq_xi(std::complex<double> *funcs_fourier[], int main_
   
   std::complex<double> result=dpol_xi(final_funcs,fg_sym,main_mod,sec_mod,N_psi,N_theta,psi_index); //Here sec_mod is kept separate, so need fdgxi
 
+  delete[] first_deriv;
+  
   return result;    
 }
 
@@ -682,8 +700,6 @@ void dpar_xi(double *input_funcs[],std::complex<double> result[],bool fg_sym[],g
 {
   //Calculates
   clean_grid(result,geom.N_interp);
-
-  std::complex<double> imag_unit=1.0i;
 
   int m_diff=main_mod-sec_mod;
  
@@ -742,7 +758,6 @@ void dpar_sq_xi(double *input_funcs[],std::complex<double> result[],geom_shape g
 
   int fourier_size_sym=geom.fourier_size_sym;
   int fourier_size_full=geom.fourier_size_full;
-  std::complex<double> imag_unit=1.0i;
   bool fg_sym[2]={true,true};
   int m_diff=main_mod-sec_mod;
 
@@ -798,8 +813,6 @@ void dwedge_xi(double *input_funcs[],std::complex<double> result[],bool fg_sym[]
   //Calculates derivative in wedge direction
   clean_grid(result,geom.N_interp);
 
-  std::complex<double> imag_unit=1.0i;
-
   int m_diff=main_mod-sec_mod;
 
   //Poloidal derivative
@@ -843,7 +856,6 @@ void dwedge_sq_xi(double *input_funcs[],std::complex<double> result[],geom_shape
 
   int fourier_size_sym=geom.fourier_size_sym;
   int fourier_size_full=geom.fourier_size_full;
-  std::complex<double> imag_unit=1.0i;
   bool fg_sym[2]={true,true};
   int m_diff=main_mod-sec_mod;
 
@@ -905,7 +917,6 @@ void dwedge_dpol_xi(double *input_funcs[],std::complex<double> result[],geom_sha
 
   int fourier_size_sym=geom.fourier_size_sym;
   int fourier_size_full=geom.fourier_size_full;
-  std::complex<double> imag_unit=1.0i;
   bool fg_sym[2]={true,true};
   int m_diff=main_mod-sec_mod;
 
@@ -950,7 +961,6 @@ void dpol_dwedge_xi(double *input_funcs[],std::complex<double> result[],geom_sha
 
   int fourier_size_sym=geom.fourier_size_sym;
   int fourier_size_full=geom.fourier_size_full;
-  std::complex<double> imag_unit=1.0i;
   bool fg_sym[2]={true,true};
   int m_diff=main_mod-sec_mod;
 

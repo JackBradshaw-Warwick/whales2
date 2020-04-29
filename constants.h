@@ -48,7 +48,7 @@ const std::complex<double> imag_unit = 1.0i ;
   // Hall constants
 const double ion_mass = 2.0 * 1.67e-27 ; //This one?
 const double electron_charge = 1.6e-19 ;
-const double hall_const = ion_mass / electron_charge ;
+const double hall_const = - ion_mass / electron_charge ; //Negative is just here as simple solution to forgetting negative in time derivative originally
 
 //Gaussian quadrature
   //4-point evaluation positions and weights

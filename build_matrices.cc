@@ -273,7 +273,7 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
   
   int m_diff=main_mod-sec_mod;
 
-  std::complex<double> result[N_interp];
+  std::complex<double> *result = new std::complex<double>[N_interp];
 
   double *temp_1 = new double[N_interp*N_theta];
   double *temp_2 = new double[N_interp*N_theta];
@@ -640,6 +640,7 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
   delete[] fourier_sym_1;
   delete[] fourier_sym_2;
   delete[] fourier_sym_3;
+  delete[] result;
 
   if( geom.analytical_type == "cylinder_theta" ){
     main_mod = static_cast<int>( geom.tor_mod );
@@ -1040,7 +1041,7 @@ void calc_fourier_sym(double grid_func[],std::complex<double> fourier_func[],int
   fftw_complex *out;
   fftw_plan plan;
 
-  double in[N_theta];
+  double *in = new double[N_theta];
   int size=(N_theta/2)+1; if(!(N_theta%2==0)){size=((N_theta-1)/2)+1;}
   int fourier_size=(N_theta/2); if(!(N_theta%2==0)){fourier_size=((N_theta-1)/2)+1;}
 
@@ -1050,8 +1051,6 @@ void calc_fourier_sym(double grid_func[],std::complex<double> fourier_func[],int
   plan = fftw_plan_dft_r2c_1d(N_theta, in, out, FFTW_ESTIMATE); //ESTIMATE , MEASURE , PATIENT , EXHAUSTIVE - only changes how quickly the plan runs, not how accurate the results are (results don't change)
   
   for(int iii=0;iii<size;iii++){out[iii][0]=0.0; out[iii][1]=0.0;}
-
-  std::complex<double> imag_unit=1.0i;
   
   for(int jjj=0;jjj<N_psi;jjj++)
     {
@@ -1066,6 +1065,7 @@ void calc_fourier_sym(double grid_func[],std::complex<double> fourier_func[],int
  
     } 
 
+  delete[] in;
   fftw_destroy_plan(plan);
   fftw_free(out);
 }
@@ -1075,7 +1075,7 @@ void calc_fourier_full(std::complex<double> grid_func[],std::complex<double> fou
   fftw_complex *out;
   fftw_plan plan;
 
-  fftw_complex in[N_theta];
+  fftw_complex *in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N_theta);
 
   out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N_theta);
   for(int iii=0;iii<N_theta;iii++){out[iii][0]=0.0; out[iii][1]=0.0;}
@@ -1083,8 +1083,6 @@ void calc_fourier_full(std::complex<double> grid_func[],std::complex<double> fou
   plan = fftw_plan_dft_1d(N_theta,in,out,FFTW_FORWARD,FFTW_ESTIMATE); //ESTIMATE , MEASURE , PATIENT , EXHAUSTIVE - only changes how quickly the plan runs, not how accurate the results are (results don't change)
 
   for(int iii=0;iii<N_theta;iii++){out[iii][0]=0.0; out[iii][1]=0.0;}
-
-  std::complex<double> imag_unit=1.0i;
   
   for(int jjj=0;jjj<N_psi;jjj++)
     {
@@ -1109,5 +1107,6 @@ void calc_fourier_full(std::complex<double> grid_func[],std::complex<double> fou
 
   fftw_destroy_plan(plan);
   fftw_free(out);
+  fftw_free(in);
 }
 
