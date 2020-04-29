@@ -656,7 +656,7 @@ std::complex<double> dpol_sq_xi(std::complex<double> *funcs_fourier[], int main_
 
   bool fg_sym[2]={true,true};
 
-  std::complex<double> first_deriv[N_psi*fourier_size_full]; //This is wasteful as mostly matrix will be zeroes - this is to facilitate use with fdgxi, but should be amended to something more efficient in future versions
+  std::complex<double> *first_deriv = new std::complex<double>[N_psi*fourier_size_full]; //This is wasteful as mostly matrix will be zeroes - this is to facilitate use with fdgxi, but should be amended to something more efficient in future versions
   for(int iii=0;iii<N_psi*fourier_size_full;iii++){first_deriv[iii]=0.0;}
   
   for(int m_prime=0;m_prime<fourier_size_full;m_prime++)
@@ -672,6 +672,8 @@ std::complex<double> dpol_sq_xi(std::complex<double> *funcs_fourier[], int main_
   
   std::complex<double> result=dpol_xi(final_funcs,fg_sym,main_mod,sec_mod,N_psi,N_theta,psi_index); //Here sec_mod is kept separate, so need fdgxi
 
+  delete[] first_deriv;
+  
   return result;    
 }
 
