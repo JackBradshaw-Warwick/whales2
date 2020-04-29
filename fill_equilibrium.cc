@@ -30,9 +30,8 @@ void fill_theta(equil_fields *equil,geom_shape geom)
   double *grad_psi=new double[N_interp];
   deriv_1d(grad_psi,equil->psi_interp,radii,N_interp,geom.deriv_order);
 
-  for( int iii=0 ; iii < N_interp ; iii++ ){ equil->pres[iii*N_theta] = ( 0.5 / mu_0 ) * ( (geom.beta_0 + 1.0) * geom.B_0 - (grad_psi[iii] / radii[iii]) ) ; }
+  for( int iii=0 ; iii < N_interp ; iii++ ){ equil->pres[iii*N_theta] = ( 0.5 / mu_0 ) * ( (geom.beta_0 + 1.0) * geom.B_0 * geom.B_0 - (grad_psi[iii] / radii[iii]) * (grad_psi[iii] / radii[iii]) ) ; }
   for( int iii=0 ; iii < N_interp ; iii++ ){ for( int jjj=1 ; jjj < N_theta ; jjj++ ){ equil->pres[iii*N_theta+jjj] = equil->pres[iii*N_theta] ; }}
-
     
   for(int iii=0 ; iii< N_interp * N_theta ; iii++){ equil->f_psi[iii] = 0.0 ; }
 
@@ -40,9 +39,9 @@ void fill_theta(equil_fields *equil,geom_shape geom)
       equil->g_pp[iii*N_theta+jjj] = grad_psi[iii] * grad_psi[iii];
       equil->g_pt[iii*N_theta+jjj] = 0.0;
       equil->g_tt[iii*N_theta+jjj] = 1.0;
-      equil->g_phph[iii*N_theta+jjj] = 1.0 / (2.0 * equil->rad_interp[iii] * equil->rad_interp[iii]);
-      equil->jacob[iii*N_theta+jjj] = sqrt(2.0) * equil->rad_interp[iii] / grad_psi[iii];
-      equil->mag_sq[iii*N_theta+jjj] = 0.5 * (grad_psi[iii] / equil->rad_interp[iii]) * (grad_psi[iii] / equil->rad_interp[iii]);
+      equil->g_phph[iii*N_theta+jjj] = 1.0 / ( radii[iii] * radii[iii] );
+      equil->jacob[iii*N_theta+jjj] = radii[iii] / grad_psi[iii];
+      equil->mag_sq[iii*N_theta+jjj] = (grad_psi[iii] / radii[iii]) * (grad_psi[iii] / radii[iii]);
       equil->curv_psi[iii*N_theta+jjj] = 0.0;
       equil->neg_shear[iii*N_theta+jjj] = 0.0;
       equil->j_dot_b[iii*N_theta+jjj] = 0.0;
@@ -50,7 +49,6 @@ void fill_theta(equil_fields *equil,geom_shape geom)
       equil->ones[iii*N_theta+jjj] = 1.0;
     }}
 
-  
   fill_cc(equil,N_interp,N_theta);
   
   equil->dpsi_dR=new double[0];
