@@ -111,8 +111,8 @@ void fill_screw(equil_fields *equil,geom_shape geom)
 
   //for(int iii=0;iii<geom.N_psi;iii++){std::cout << radii[iii*(geom.num_quad+1)] << std::endl;}
 
-  //delete[] radii; radii=NULL;
-  // delete[] grad_psi; grad_psi=NULL;
+  delete[] radii; radii=NULL;
+  delete[] grad_psi; grad_psi=NULL;
 }
 
 void fill_full(equil_fields *equil,geom_shape geom)
