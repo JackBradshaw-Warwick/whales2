@@ -110,13 +110,13 @@ int main(int argc,char* argv[])
       if(!(geom.write_mats==0)){ save_mats( geom , mats ); }
     }
 
-
+  /*
   ierr = MatView(E,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   if(geom.Hall_on == 1){
     ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   }
   ierr = MatView(F,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  
+  */
 
   clock_t time1;
   if( my_rank == 0 ){ time1 = clock() ;}
