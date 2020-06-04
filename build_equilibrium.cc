@@ -28,7 +28,14 @@ void read_geom(geom_shape *geom)
   //Calculated here for convenience
   geom->m_range = geom->m_max - geom->m_min ;
 
-  geom->num_quad = 4 ;
+  read_in("num_quad",value);
+  if( !(value == "") ) { geom->num_quad = std::stoi( value ) ; }
+  else { geom->num_quad = 4 ; }
+
+  if(!(geom->num_quad == 4 || geom->num_quad == 6)){
+    std::cout << "That value for num_quad is invalid. Setting num_quad = 4." << std::endl;
+    geom->num_quad = 4 ;
+  }
   
   read_in("m_coup",value);
   if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
@@ -462,15 +469,21 @@ void fill_rad(equil_fields *equil,geom_shape geom, double flux_max, double flux_
     for(int iii=0 ; iii < N_interp ; iii++){ equil->rad_interp[iii] = sqrt(flux_min) + iii * diff ; }
     for(int iii=0 ; iii < N_psi ; iii++){ equil->rad_var[iii] = equil->psi_interp[ iii * (geom.num_quad + 1) ] ; }*/
 
-  //4-point quadrature spacing
+  //Equally spaced grid
   double diff = ( sqrt(flux_max) - sqrt(flux_min) ) / ( N_psi - 1 ) ;
   for(int iii=0 ; iii < N_psi ; iii++){
     equil->rad_var[iii] = sqrt(flux_min) + iii * diff ;
-    equil->rad_interp[ iii * 5 ] = equil->rad_var[iii] ;
+    equil->rad_interp[ iii * (geom.num_quad + 1) ] = equil->rad_var[iii] ;
   }
 
+  //4-point quadrature spacing
   for(int iii=0 ; iii < N_psi - 1 ; iii++){
-    for(int jjj=0 ; jjj < 4 ; jjj++){
-      equil->rad_interp[ iii * 5 + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gq4eval[jjj] )    ;
+    for(int jjj=0 ; jjj < geom.num_quad ; jjj++){
+      if(geom.num_quad == 4){
+	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gq4eval[jjj] )    ;
+      }
+      else if(geom.num_quad == 6){
+	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gq6eval[jjj] )    ;
+      }
     }}
 }

@@ -826,13 +826,18 @@ std::complex<double> integrate1d(std::complex<double> func_grid[],double rad_int
 {
   assert( upper_point >= lower_point );
 
-  //4-point Guassian quadrature
+  //Guassian quadrature
   std::complex<double> result = 0.0;
-  double upper = rad_interp[upper_point * 5] ;
-  double lower = rad_interp[lower_point * 5] ;
+  double upper = rad_interp[upper_point * (num_quad+1)] ;
+  double lower = rad_interp[lower_point * (num_quad+1)] ;
 
-  for(int iii=0 ; iii < 4; iii++){
-    result += gq4weigh[iii] * func_grid[lower_point * 5 + iii + 1] * shape[0](rad_interp[lower_point * 5 + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * 5 + iii + 1],upper,lower) ;
+  for(int iii=0 ; iii < num_quad; iii++){
+    if(num_quad == 4){
+      result += gq4weigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape[0](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) ;
+    }
+    else if(num_quad == 6){
+      result += gq6weigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape[0](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) ;
+    }
   }
 
   result *= 0.5 * ( upper - lower );
