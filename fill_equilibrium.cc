@@ -25,7 +25,8 @@ void fill_theta(equil_fields *equil,geom_shape geom)
       equil->height[iii*N_theta+jjj] = radii[iii] * sin(equil->theta_grid[jjj]) ;
     }}
 
-  fill_2dgrid(dens,equil->dens,equil->psi_interp,N_interp,equil->theta_grid,N_theta);
+  for( int iii=0 ; iii < N_interp ; iii++ ){ equil->dens[iii*N_theta] = dens( equil->psi_interp[iii] , flux_max , geom ) ; }
+  for( int iii=0 ; iii < N_interp ; iii++ ){ for( int jjj=1 ; jjj < N_theta ; jjj++ ){ equil->dens[iii*N_theta+jjj] = equil->dens[iii*N_theta] ; }}
 
   double *grad_psi=new double[N_interp];
   deriv_1d(grad_psi,equil->psi_interp,radii,N_interp,geom.deriv_order);
@@ -82,9 +83,8 @@ void fill_screw(equil_fields *equil,geom_shape geom)
       equil->height[iii*geom.N_theta+jjj]=radii[iii]*sin(equil->theta_grid[jjj]);
     }}
 
-  fill_2dgrid(dens,equil->dens,equil->psi_interp,geom.N_interp,equil->theta_grid,geom.N_theta);
-
-
+  for( int iii=0 ; iii < geom.N_interp ; iii++ ){ equil->dens[iii*geom.N_theta] = dens( equil->psi_interp[iii] , flux_max , geom ) ; }
+  for( int iii=0 ; iii < geom.N_interp ; iii++ ){ for( int jjj=1 ; jjj < geom.N_theta ; jjj++ ){ equil->dens[iii*geom.N_theta+jjj] = equil->dens[iii*geom.N_theta] ; }}
   
   double *grad_psi=new double[geom.N_interp]; //Equal to B_\theta
   deriv_1d(grad_psi,equil->psi_interp,radii,geom.N_interp,geom.deriv_order);

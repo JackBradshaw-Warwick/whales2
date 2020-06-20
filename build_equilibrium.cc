@@ -40,18 +40,6 @@ void read_geom(geom_shape *geom)
   read_in("m_coup",value);
   if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
   else { geom->m_coup = geom->m_range ; }
-  
-  /*I no longer think this is the correct way to do it
-    read_in("m_coup",value);
-    if(value==""){
-    
-    if(geom->m_range%2==0){geom->m_coup=(geom->m_range-2)/2;}
-    else{geom->m_coup=(geom->m_range-1)/2;}
-    }
-    else{geom->m_coup=std::stoi( value );}
-
-    if(geom->m_range%2==0){assert(geom->m_coup<=(geom->m_range-2)/2);}
-    else{assert(geom->m_coup<=(geom->m_range-1)/2);}*/ 
 
   read_in("shape_order",geom->shape_order); //Can read directly in as string
   if( geom->shape_order == "" ) { geom->shape_order = "NHLC" ; } //Default
@@ -79,6 +67,32 @@ void read_geom(geom_shape *geom)
   else { std::cout << "Fill_type is not recognised as it has been entered" << std::endl; }
 
   if( geom->analytical_type == "cylindrical_theta" || geom->analytical_type == "cylindrical_screw" ){ geom->m_coup = 0 ; }
+
+  read_in("dens_form",value);
+  if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
+  else { geom->dens_form = 0 ; }
+
+  read_in("A_dens",value);
+  if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
+  else { geom->A_dens = 1.0 ; }
+
+  assert( geom->A_dens > 0.0 );
+
+  read_in("B_dens",value);
+  if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
+  else { geom->B_dens = 0.0 ; }
+
+  assert( geom->B_dens < 1.0 );
+
+  read_in("mu",value);
+  if( !(value == "") ) { geom->mu = std::stod( value ) ; }
+  else { geom->mu = 0.0 ; }
+
+  assert( geom->mu >= 0.0 );
+
+  read_in("nu",value);
+  if( !(value == "") ) { geom->nu = std::stod( value ) ; }
+  else { geom->nu = 1.0 ; }
 
   read_in("min_rad",value);
   if( !(value == "") ) { geom->min_rad = std::stod( value ) ; }

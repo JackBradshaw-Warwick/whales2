@@ -63,9 +63,8 @@ void fill_sol_simp(equil_fields *equil,geom_shape geom)
 
 
   equil->dens=new double[geom.N_interp*geom.N_theta];
-  fill_2dgrid(dens,equil->dens,equil->psi_interp,geom.N_interp,equil->theta_grid,geom.N_theta);
-
-
+  for( int iii=0 ; iii < geom.N_interp ; iii++ ){ equil->dens[iii*geom.N_theta] = dens( equil->psi_interp[iii] , flux_0 , geom ) ; }
+  for( int iii=0 ; iii < geom.N_interp ; iii++ ){ for( int jjj=1 ; jjj < geom.N_theta ; jjj++ ){ equil->dens[iii*geom.N_theta+jjj] = equil->dens[iii*geom.N_theta] ; }}
 
   sol_E=flux_0*(s_R_0/(s_min_rad*s_min_rad*s_min_rad))*(s_inv_asp*sol_A-0.5*sol_B);
   sol_F=flux_0*sol_B/(2.0*s_R_0*s_min_rad*s_min_rad*s_min_rad);

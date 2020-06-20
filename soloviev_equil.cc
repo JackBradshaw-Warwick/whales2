@@ -356,7 +356,8 @@ int fill_sol(equil_fields *equil,geom_shape geom)
   //for(int iii=0;iii<N_interp;iii++){std::cout << geom.psi_interp[iii] << std::endl;}
 
   //Fill in f_psi,pres,dens
-  fill_2dgrid(dens,equil->dens,equil->psi_interp,geom.N_interp,equil->theta_grid,geom.N_theta);
+  for( int iii=0 ; iii < N_interp ; iii++ ){ equil->dens[iii*N_theta] = dens( equil->psi_interp[iii] , flux_0 , geom ) ; }
+  for( int iii=0 ; iii < N_interp ; iii++ ){ for( int jjj=1 ; jjj < N_theta ; jjj++ ){ equil->dens[iii*N_theta+jjj] = equil->dens[iii*N_theta] ; }}
 
   double B_0,beta_0;
   read_in("B_0",value); B_0=std::stod( value );

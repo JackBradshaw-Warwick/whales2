@@ -46,7 +46,7 @@ const double gamma_loc = 5.0 / 3.0 ;
 const std::complex<double> imag_unit = 1.0i ;
 
   // Hall constants
-const double ion_mass = 2.0 * 1.67e-27 ; //This one?
+const double ion_mass = 2.0 * 1.67e-27 ; // Deuterium (approx.)
 const double electron_charge = 1.6e-19 ;
 const double hall_const = - ion_mass / electron_charge ; //Negative is just here as simple solution to forgetting negative in time derivative originally
 
@@ -57,7 +57,7 @@ const double gq4weigh[4] =  { 0.5-(sqrt(30.0)/36.0), 0.5+(sqrt(30.0)/36.0), 0.5+
 //{ -0.861136 , -0.339981 , 0.339981 , 0.861136 }
 //{ 0.347855 , 0.652145 , 0.652145 , 0.347855 }
 
-  //6-point evaluation positions and weights
+  //6-point evaluation positions and weights (exact expressions too tedious to derive)
 const double gq6eval[6] = { -0.932469514203152 , -0.661209386466265 , -0.238619186083197 , 0.238619186083197 , 0.661209386466265 , 0.932469514203152 };  
 const double gq6weigh[6] =  { 0.171324492379170 , 0.360761573048139 , 0.467913934572691 , 0.467913934572691 , 0.360761573048139 , 0.171324492379170 };  
 
