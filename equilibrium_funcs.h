@@ -9,7 +9,7 @@ double safety(double r);
 double maj_rad(double psi,double theta);
 double height(double psi,double theta);
 double f_psi(double psi, double theta);
-double dens(double psi, double theta);
+double dens(double psi, double psi_max, geom_shape geom);
 double pres(double psi, double theta);
 
 

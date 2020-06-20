@@ -35,6 +35,12 @@ struct geom_shape
   double alpha_sol;
   double flux_max;
 
+  int dens_form;
+  double A_dens;
+  double B_dens;
+  double mu;
+  double nu;
+
   std::string output_dir;
   std::string results_filename;
 
