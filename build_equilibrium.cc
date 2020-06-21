@@ -66,7 +66,33 @@ void read_geom(geom_shape *geom)
   }
   else { std::cout << "Fill_type is not recognised as it has been entered" << std::endl; }
 
-  if( geom->analytical_type == "cylindrical_theta" || geom->analytical_type == "cylindrical_screw" ){ geom->m_coup = 0 ; }
+  if( geom->analytical_type == "cylinder_theta" || geom->analytical_type == "cylinder_screw" ){ geom->m_coup = 0 ; }
+
+  read_in("dens_form",value);
+  if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
+  else { geom->dens_form = 0 ; }
+
+  read_in("A_dens",value);
+  if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
+  else { geom->A_dens = 1.0 ; }
+
+  assert( geom->A_dens > 0.0 );
+
+  read_in("B_dens",value);
+  if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
+  else { geom->B_dens = 0.0 ; }
+
+  assert( geom->B_dens < 1.0 );
+
+  read_in("mu",value);
+  if( !(value == "") ) { geom->mu = std::stod( value ) ; }
+  else { geom->mu = 0.0 ; }
+
+  assert( geom->mu >= 0.0 );
+
+  read_in("nu",value);
+  if( !(value == "") ) { geom->nu = std::stod( value ) ; }
+  else { geom->nu = 1.0 ; }
 
   read_in("dens_form",value);
   if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
@@ -198,10 +224,11 @@ void calc_geom(geom_shape *geom)
   for(int m_count=0;m_count<3;m_count++){ fill_dim(geom->dims_loc[m_count],m_count,geom->N_psi,geom->shape_order); }
   
   int dim_temp=0;
+  geom->pol_pos[0]=0;
   for(int m_count=0;m_count<geom->m_range;m_count++){
     fill_dim(dim_temp,geom->m_min+m_count,geom->N_psi,geom->shape_order);
     geom->dim+=dim_temp;
-    if(!(m_count==0)){geom->pol_pos[m_count]=geom->pol_pos[m_count-1]+dim_temp;}
+    if(!(m_count==geom->m_range-1)){geom->pol_pos[m_count+1]=geom->pol_pos[m_count]+dim_temp;}
   }
 
   //For higher order elements add more variables 
