@@ -437,9 +437,17 @@ void fill_dim(int &dim_loc,int pol_mode,int N_psi,std::string shape_order)
     if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
     else{dim_loc=2*N_psi-3;}
   }
+  else if(shape_order=="HLN"){
+    if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
+    else{dim_loc=2*N_psi-3;}
+  }
   else if(shape_order=="NHQL" || shape_order=="HQL"){
     if(std::abs(pol_mode)==1){dim_loc=3*N_psi-3;}
     else{dim_loc=3*N_psi-4;}
+  }
+  else if(shape_order=="HQD"){
+    if(std::abs(pol_mode)==1){dim_loc=4*N_psi-4;}
+    else{dim_loc=4*N_psi-5;}
   }
   else if(shape_order=="NHCQ" || shape_order=="HCQ"){
     if(std::abs(pol_mode)==1){dim_loc=4*N_psi-3;}
@@ -473,7 +481,7 @@ void fill_indices(int *perp_indices[],int *wedge_indices[],int pol_mode,int N_ps
 	  wedge_indices[0][iii]=2*iii;
 	}
     }
-  else if(shape_order=="LN")
+  else if(shape_order=="LN" || shape_order=="HLN")
     {
       if(std::abs(pol_mode)==1){
       perp_indices[0][0]=-1; perp_indices[0][N_psi-1]=-1; //Normal vanishes at centre and outer wall
@@ -521,6 +529,37 @@ void fill_indices(int *perp_indices[],int *wedge_indices[],int pol_mode,int N_ps
 	    perp_indices[0][iii]=3*iii-2;
 	    perp_indices[1][iii]=3*iii;
 	    wedge_indices[0][iii]=3*iii-1;
+	  }
+      }
+    }
+  else if(shape_order=="HQD")
+    {	  
+      if(std::abs(pol_mode)==1){
+	perp_indices[0][0]=-1; perp_indices[0][N_psi-1]=-1; //Normal vanishes at centre and outer wall
+	perp_indices[1][0]=1; perp_indices[1][N_psi-1]=-1; 
+	wedge_indices[0][0]=0; wedge_indices[0][N_psi-1]=4*N_psi-5; //Wedge non-zero at centre and non-zero at outer wall
+	wedge_indices[1][0]=2; wedge_indices[1][N_psi-1]=-1;
+	
+	for(int iii=1;iii<N_psi-1;iii++)
+	  {
+	    perp_indices[0][iii]=4*iii-1;
+	    perp_indices[1][iii]=4*iii+1;
+	    wedge_indices[0][iii]=4*iii;
+	    wedge_indices[1][iii]=4*iii+2;
+	  }
+      }
+      else{
+	perp_indices[0][0]=-1; perp_indices[0][N_psi-1]=-1; //Normal vanishes at centre and outer wall
+	perp_indices[1][0]=0; perp_indices[1][N_psi-1]=-1; 
+	wedge_indices[0][0]=-1; wedge_indices[0][N_psi-1]=4*N_psi-6; //Wedge non-zero at centre and non-zero at outer wall
+	wedge_indices[1][0]=1; wedge_indices[1][N_psi-1]=-1;
+	
+	for(int iii=1;iii<N_psi-1;iii++)
+	  {
+	    perp_indices[0][iii]=4*iii-2;
+	    perp_indices[1][iii]=4*iii;
+	    wedge_indices[0][iii]=4*iii-1;
+	    wedge_indices[1][iii]=4*iii+1;
 	  }
       }
     }

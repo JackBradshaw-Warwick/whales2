@@ -232,11 +232,11 @@ void calc_geom(geom_shape *geom)
   }
 
   //For higher order elements add more variables 
-  if(geom->shape_order=="NHLC" || geom->shape_order=="HLC" || geom->shape_order=="LN"){geom->num_var_perp=1; geom->num_var_wedge=1;}
+  if(geom->shape_order=="NHLC" || geom->shape_order=="HLC" || geom->shape_order=="LN" || geom->shape_order=="HLN"){geom->num_var_perp=1; geom->num_var_wedge=1;}
   else if(geom->shape_order=="NHQL" || geom->shape_order=="HQL"){geom->num_var_perp=2; geom->num_var_wedge=1;}
-  else if(geom->shape_order=="NHCQ" || geom->shape_order=="HCQ" || geom->shape_order=="CB"){geom->num_var_perp=2; geom->num_var_wedge=2;}
+  else if(geom->shape_order=="NHCQ" || geom->shape_order=="HCQ" || geom->shape_order=="CB" || geom->shape_order=="HQD"){geom->num_var_perp=2; geom->num_var_wedge=2;}
   else if(geom->shape_order=="NHQC" ){geom->num_var_perp=3; geom->num_var_wedge=2;}
-  else{std::cout << "That shape order is not recognised (fill_geometry)" << std::endl;}
+  else{std::cout << "That shape order is not recognised (calc_geom)" << std::endl;}
 
   
   geom->ind_perp_main=new int*[geom->num_var_perp]; geom->ind_perp_sec=new int*[geom->num_var_perp];
