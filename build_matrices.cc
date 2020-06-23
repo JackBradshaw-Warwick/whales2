@@ -857,6 +857,11 @@ void select_shape(std::string* out_shape,std::string shape_order,int shape_num,b
     if(is_perp){*out_shape="NHLN";}
     else{*out_shape="NHLN";}
   }
+  else if(shape_order=="HLN"){
+    assert(shape_num==0);
+
+    *out_shape="HLN";
+  }
   else if(shape_order=="NHQL"){
     if(is_perp){assert(shape_num<=1);}
     else{assert(shape_num==0);}
@@ -874,6 +879,12 @@ void select_shape(std::string* out_shape,std::string shape_order,int shape_num,b
       if(shape_num==0){*out_shape="HQD_1";}
       else{*out_shape="HQD_2";}}
     else{*out_shape="NHLN";}
+  }
+  else if(shape_order=="HQD"){
+    assert(shape_num<=1);
+
+    if(shape_num==0){*out_shape="HQD_1";}
+    else{*out_shape="HQD_2";}
   }
   else if(shape_order=="NHCQ"){
     if(is_perp){assert(shape_num<=1);}

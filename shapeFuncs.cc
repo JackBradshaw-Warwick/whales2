@@ -37,12 +37,12 @@ double dN_A_nhqd(double psi,double psi_upp,double psi_low){return (4.0*psi-psi_u
 double dN_B_nhqd(double psi,double psi_upp,double psi_low){return (4.0*psi-3.0*psi_upp-psi_low)/((psi_upp-psi_low)*(psi_upp-psi_low));}
 double dN_C_nhqd(double psi,double psi_upp,double psi_low){return 4.0*(psi_upp+psi_low-2.0*psi)/((psi_upp-psi_low)*(psi_upp-psi_low));}
 
-double N_A_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
-double N_B_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
-double N_C_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
-double dN_A_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
-double dN_B_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
-double dN_C_hqd(double psi,double psi_upp,double psi_low){return 0.0;}
+double N_A_hqd(double psi,double psi_upp,double psi_low){return (3.0*psi-psi_upp-2.0*psi_low) / ( 3.0 * (psi_upp-psi_low) ) ;}
+double N_B_hqd(double psi,double psi_upp,double psi_low){return (2.0*psi_upp+psi_low-3.0*psi) / ( 3.0 * (psi_upp-psi_low) ) ;}
+double N_C_hqd(double psi,double psi_upp,double psi_low){return 2.0 / 3.0 ;}
+double dN_A_hqd(double psi,double psi_upp,double psi_low){return (4.0*psi-psi_upp-3.0*psi_low)/((psi_upp-psi_low)*(psi_upp-psi_low));}
+double dN_B_hqd(double psi,double psi_upp,double psi_low){return (4.0*psi-3.0*psi_upp-psi_low)/((psi_upp-psi_low)*(psi_upp-psi_low));}
+double dN_C_hqd(double psi,double psi_upp,double psi_low){return 4.0*(psi_upp+psi_low-2.0*psi)/((psi_upp-psi_low)*(psi_upp-psi_low));}
 
 /****************************************************************************************/
 //LINEAR
