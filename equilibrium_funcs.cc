@@ -1,9 +1,9 @@
 #include "constants.h"
 
 
-double con_tmp=0.60;
-double rec=(0.5-con_tmp)+2.0;
-double con=1.0/rec;
+//double con_tmp=0.60;
+//double rec=(0.5-con_tmp)+2.0;
+double con=5.0;
 
 double g_B_0,g_min_rad,g_alpha;
 int g_counter=0;
@@ -33,7 +33,7 @@ double safety(double r)
   return 1.0/con;
 }
 
-double dens(double psi, double psi_max, geom_shape geom)
+double dens(double psi, double psi_max, geom_shape geom) //psi not r!
 {
   if(geom.dens_form == 0){//Default
     return geom.A_dens * pow( 1.0 - geom.B_dens * pow( psi / psi_max , geom.mu ) , geom.nu );
@@ -46,17 +46,29 @@ double dens(double psi, double psi_max, geom_shape geom)
   }
 }
 
-double pres(double psi, double theta)
+double pres(double r, double theta)
 {
-  return 0.0; 
+  std::string value;
+  double B_0=1.0; 
+  read_in("B_0",value); B_0=std::stod( value );
+
+  double beta_0=1.0; 
+  read_in("beta_0",value); beta_0=std::stod( value );
+
+  return 0.5*B_0*B_0*beta_0 - con*con*r*r; 
 }
 
-double f_psi(double psi, double theta)
+double f_psi(double r, double theta)
 {
+  std::string value;
+  double B_0=1.0; 
+  read_in("B_0",value); B_0=std::stod( value );
+  
   theta=1.0/0.0; //In case I accidentally put theta dependance in return again
-  return 0.0;
+  return B_0;
 }
 
+//Are these even used? Check!
 double maj_rad(double psi,double theta)
 {
   std::string value;

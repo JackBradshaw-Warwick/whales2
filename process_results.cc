@@ -14,7 +14,7 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
   if(value=="cylinder_theta" || value=="cylinder_screw"){tor_mod=static_cast<double>(geom.m_min);}
 
   
-  if(shape_order=="NHLC")
+  //if(shape_order=="NHLC")
     {
       std::complex<double> *perp_temp=new std::complex<double>[N_psi*N_theta];
       std::complex<double> *wedge_temp=new std::complex<double>[N_psi*N_theta];
@@ -25,9 +25,9 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
       for(int iii=0;iii<num_sols;iii++){
 	
 	for(int jjj=0;jjj<N_psi;jjj++){
-	  for(int kkk=0;kkk<N_theta;kkk++){
-	    perp_temp[jjj*N_theta+kkk]=xi_perp[iii*N_psi*N_theta+jjj*N_theta+kkk];
-	    wedge_temp[jjj*N_theta+kkk]=xi_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk];
+	  for(int kkk=0;kkk<N_theta;kkk++){ //Normalise to regular \xi_\perp and \xi_\wedge. 
+	    perp_temp[jjj*N_theta+kkk]=xi_perp[iii*N_psi*N_theta+jjj*N_theta+kkk] / eq.jacob[jjj*N_theta+kkk] ;
+	    wedge_temp[jjj*N_theta+kkk]=xi_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] / sqrt( eq.g_pp[jjj*N_theta+kkk] / eq.mag_sq[jjj*N_theta+kkk] ) ;
 	  }}
 
 	/******************************************************************************************************************************************************************************************/
@@ -53,7 +53,7 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
 	/******************************************************************************************************************************************************************************************/
 	//b-parallel
 
-	//-(div dot B^2) \vec{xi_perp}
+	//-(div B^2) dot \vec{xi_perp}
 	deriv_1d(workspace_doub,eq.mag_sq,eq.psi_grid,N_psi,N_theta,true,deriv_order);
 	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]=-workspace_doub[jjj*N_theta+kkk];}}
 	deriv_ang(workspace_doub,eq.mag_sq,eq.theta_grid,N_theta,N_psi,false);

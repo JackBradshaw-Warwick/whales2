@@ -32,10 +32,14 @@ void read_geom(geom_shape *geom)
   if( !(value == "") ) { geom->num_quad = std::stoi( value ) ; }
   else { geom->num_quad = 4 ; }
 
-  if(!(geom->num_quad == 4 || geom->num_quad == 6)){
+  if(!(geom->num_quad == 4 || geom->num_quad == 6 || geom->num_quad == 12 || geom->num_quad == 18)){
     std::cout << "That value for num_quad is invalid. Setting num_quad = 4." << std::endl;
     geom->num_quad = 4 ;
   }
+
+  read_in("quad_type",value);
+  if( !(value == "") ) { geom->quad_type = value ; }
+  else { geom->quad_type = "gq" ; }
   
   read_in("m_coup",value);
   if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
@@ -517,14 +521,14 @@ void fill_rad(equil_fields *equil,geom_shape geom, double flux_max, double flux_
     equil->rad_interp[ iii * (geom.num_quad + 1) ] = equil->rad_var[iii] ;
   }
 
-  //4-point quadrature spacing
+  const double* gqNeval;
+  const double* gqNdummy;
+
+  assign_gq(gqNeval,gqNdummy,geom.num_quad);
+
+  //Gaussian quadrature spacing 
   for(int iii=0 ; iii < N_psi - 1 ; iii++){
     for(int jjj=0 ; jjj < geom.num_quad ; jjj++){
-      if(geom.num_quad == 4){
-	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gq4eval[jjj] )    ;
-      }
-      else if(geom.num_quad == 6){
-	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gq6eval[jjj] )    ;
-      }
+	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gqNeval[jjj] )    ;
     }}
 }

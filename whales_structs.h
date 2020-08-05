@@ -11,6 +11,7 @@ struct geom_shape
   int N_psi;
   int N_theta;
   int num_quad;
+  std::string quad_type;
   
   int m_min;
   int m_max;
@@ -132,6 +133,15 @@ struct matrix_coeffs
   std::complex<double>* f_wp; //[m_range*m_coup*N_interp]
   std::complex<double>* f_wdw; //[m_range*m_coup*N_interp]	
   std::complex<double>* f_ww; //[m_range*m_coup*N_interp]
+};
+
+struct gq_mod
+{  
+  double **weights ; //[N_psi][num_quad]
+
+  int num_div ;
+  int wt_gq ;
+  double tol ;
 };
 
 #endif

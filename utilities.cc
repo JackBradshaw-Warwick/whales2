@@ -60,6 +60,36 @@ void init_coeffs(matrix_coeffs* coeffs,geom_shape geom)
   coeffs->f_ww=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_ww,N_interp*N_theta);
 }
 
+void init_gq_mod(gq_mod* gq_mod, geom_shape geom, equil_fields eq)
+{
+  gq_mod->weights = new double*[geom.N_psi-1] ;
+  for(int i=0 ; i < geom.N_psi - 1 ; i++){
+    gq_mod->weights[i] = new double[geom.num_quad] ;
+  }
+
+  std::string value="";
+  read_in("num_div",value);
+  if( !(value == "") ) { gq_mod->num_div = std::stoi( value ) ; }
+  else{ gq_mod->num_div = 3 ; }
+
+  gq_mod->wt_gq = 0 ;
+  gq_mod->tol = 1.0e-10 ;
+
+  //Since comparing only linear/constant terms need to normalise the tolerance 
+  if(geom.shape_order=="NHLC"){ gq_mod->tol /= ( eq.rad_var[1] - eq.rad_var[0] ) ; }
+  else if(geom.shape_order=="NHQL"){ gq_mod->tol /= pow(( eq.rad_var[1] - eq.rad_var[0] ),3) ; }
+  else if(geom.shape_order=="NHCQ"){ gq_mod->tol /= pow(( eq.rad_var[1] - eq.rad_var[0] ),5) ; } 
+}
+
+void delete_gq_mod(gq_mod* gq_mod, int N_psi)
+{
+  for(int i=0 ; i < N_psi - 1 ; i++){
+    delete[] gq_mod->weights[i]; gq_mod->weights[i] = NULL ;
+  }
+
+  delete[] gq_mod->weights; gq_mod->weights = NULL ;
+}
+
 void delete_full_geom_shape(geom_shape* geom)
 {
   delete[] geom->pol_pos; geom->pol_pos=NULL;
@@ -130,6 +160,14 @@ void delete_full_matrix_coeffs(matrix_coeffs* coeffs)
   delete[] coeffs->f_wp; coeffs->f_wp=NULL;
   delete[] coeffs->f_wdw; coeffs->f_wdw=NULL;
   delete[] coeffs->f_ww; coeffs->f_ww=NULL;
+}
+
+void assign_gq( const double*& gq_eval , const double*& gq_weigh , int num_quad){
+  
+  if(num_quad == 4){ gq_eval = gq4eval ; gq_weigh = gq4weigh ; }
+  else if(num_quad == 6){ gq_eval = gq6eval ; gq_weigh = gq6weigh ; }
+  else if(num_quad == 12){ gq_eval = gq12eval ; gq_weigh = gq12weigh ; }
+  else if(num_quad == 18){ gq_eval = gq18eval ; gq_weigh = gq18weigh ; }
 }
 
 
@@ -420,7 +458,7 @@ void read_in(std::string token_name,std::string & value)
 	}
 
       std::cout << "Unable to find pair to key " << token_name << std::endl;
-
+      value="";
       myfile.close();
     }
   else{std::cout << "Non-existant file" << std::endl;}	

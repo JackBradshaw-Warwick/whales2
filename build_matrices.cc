@@ -1,5 +1,6 @@
 #include "constants.h"
 
+
 int build_matrices(Mat mats[] , geom_shape geom , equil_fields equil , matrix_coeffs *coeffs)
 {
   int ierr;
@@ -26,7 +27,11 @@ int build_matrices(Mat mats[] , geom_shape geom , equil_fields equil , matrix_co
   //std::cout << "Process " << my_rank << " has a range from " << my_low << " to " << my_high << std::endl;
   
   int row_offset=0, col_offset=0 ;
-  
+
+  gq_mod gq_mod;
+
+  if(geom.quad_type=="gq"){}
+  else if(geom.quad_type=="gq_mod"){ build_gq_mod(&gq_mod,geom,equil); }
       
   for(int main_mod=geom.m_min ; main_mod<geom.m_max ; main_mod++)
     {
@@ -40,7 +45,7 @@ int build_matrices(Mat mats[] , geom_shape geom , equil_fields equil , matrix_co
 	  if(my_high<my_low){} //Occurs in case my_rank > number of sub matrices
 	  else if(my_low <= map_mod && map_mod <= my_high)
 	    {
-	      build_submatrices(mats,equil,&geom,coeffs,main_mod,sec_mod,row_offset,col_offset);
+	      build_submatrices(mats,equil,&geom,coeffs,&gq_mod,main_mod,sec_mod,row_offset,col_offset);
 	    }
 	  else{}
 
@@ -57,7 +62,10 @@ int build_matrices(Mat mats[] , geom_shape geom , equil_fields equil , matrix_co
       std::cout << "main_mod: " << main_mod << std::endl;
       std::cout << "tor_mod: " << geom.tor_mod << std::endl;
     }
-  std::cout << "Finished filling matrix : " << my_rank << std::endl;
+  std::cout << "Finished filling matrix : " << my_rank << std::endl; 
+  
+  if(geom.quad_type=="gq"){}
+  else if(geom.quad_type=="gq_mod"){ delete_gq_mod(&gq_mod,geom.N_psi); }
 
   
   ierr = MatAssemblyBegin(mats[0],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -72,8 +80,124 @@ int build_matrices(Mat mats[] , geom_shape geom , equil_fields equil , matrix_co
   }
 }
 
+void build_gq_mod(gq_mod *gq_mod,geom_shape geom, equil_fields eq)
+{
+  init_gq_mod(gq_mod,geom,eq);
 
-void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs* coeffs,int main_mod,int sec_mod,int row_offset,int col_offset)
+  for(int iii=0 ; iii < geom.N_psi - 1 ; iii++){
+    solve_weights(gq_mod->weights[iii],eq.rad_var[iii+1],eq.rad_var[iii],geom.num_quad,gq_mod->num_div) ;
+  }
+}
+
+//Lagrange polynomials + derivatives
+const double LP_1(double x){return 1.0;}
+const double LP_2(double x){return x;}
+const double LP_3(double x){return 0.5*(3.0*x*x-1.0);}
+const double LP_4(double x){return 0.5*x*(5.0*x*x-3.0);}
+const double LP_5(double x){return 0.125*(35.0*x*x*x*x-30.0*x*x+3.0);}
+const double LP_6(double x){return 0.125*x*(63.0*x*x*x*x-70.0*x*x+15.0);}
+
+
+const double dLP_1(double x){return 0.0;}
+const double dLP_2(double x){return 1.0;}
+const double dLP_3(double x){return 3.0*x;}
+const double dLP_4(double x){return 0.5*(15.0*x*x-3.0);}
+const double dLP_5(double x){return 0.125*(140.0*x*x*x-60.0*x);}
+const double dLP_6(double x){return 0.125*(315.0*x*x*x*x-210.0*x*x+15.0);}
+
+const double (*LP[6])(double) = {LP_1,LP_2,LP_3,LP_4,LP_5,LP_6} ;
+const double (*dLP[6])(double) = {dLP_1,dLP_2,dLP_3,dLP_4,dLP_5,dLP_6} ;
+
+int solve_weights(double weights[],double upp, double low, int num_quad, int num_div)
+{
+  Mat A;
+  KSP ksp;
+  Vec x,b; // A*x=b
+  int ierr;
+  const double *gqNeval,*gqNweigh,*gqMeval,*gqMweigh;
+  int M = ( num_quad / num_div ) ;
+
+  assign_gq(gqMeval,gqMweigh,M);
+  assign_gq(gqNeval,gqNweigh,num_quad);
+
+  double sing_pnt = (upp + low ) / ( low - upp ) ;
+
+  //Create matrix
+  ierr = MatCreate(PETSC_COMM_WORLD,&A); CHKERRQ(ierr);
+  ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,num_quad,num_quad); CHKERRQ(ierr);
+  ierr = MatSetFromOptions(A); CHKERRQ(ierr);
+  ierr = MatSetUp(A); CHKERRQ(ierr);
+
+  //Fill matrix with LP values
+  for(int iii=0; iii < M ; iii++){
+    for(int jjj=0; jjj < num_quad ; jjj++){
+      for(int kkk=0; kkk < num_div ; kkk++){
+	MatSetValue(A,iii+kkk*M,jjj,LP[iii](gqNeval[jjj]) / pow((sing_pnt - gqNeval[jjj]),kkk) ,INSERT_VALUES);
+      }}}
+
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  //Create solution vector and RHS
+  ierr = VecCreate(PETSC_COMM_WORLD,&x);CHKERRQ(ierr);
+  ierr = VecSetSizes(x,PETSC_DECIDE,num_quad);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(x);CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(x);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(x);CHKERRQ(ierr);
+
+  ierr = VecCreate(PETSC_COMM_WORLD,&b);CHKERRQ(ierr);
+  ierr = VecSetSizes(b,PETSC_DECIDE,num_quad);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(b);CHKERRQ(ierr);
+
+  //Calc LP integrals
+  double int_LP[M] ;
+  int_LP[0] = 2.0 ;
+  for(int iii=1 ; iii < M ; iii++){ int_LP[iii] = 0.0 ; }
+  double int_LPd[M],int_LPdd[M];
+
+  for(int iii = 0 ; iii < M ; iii++){
+    int_LPd[iii] = LP[iii](sing_pnt) * log( std::abs( ( 1.0 + sing_pnt ) / (1.0 - sing_pnt) ) ) ;
+    int_LPdd[iii] = LP[iii](sing_pnt) * ( 2.0 / ( sing_pnt * sing_pnt - 1.0) ) - dLP[iii](sing_pnt) * log( std::abs( ( 1.0 + sing_pnt ) / (1.0 - sing_pnt) ) ) ;
+    for(int jjj = 0 ; jjj < M ; jjj++){
+      int_LPd[iii] += gqMweigh[jjj] * ( ( LP[iii](gqMeval[jjj]) - LP[iii](sing_pnt) ) / ( sing_pnt - gqMeval[jjj] ) ) ;
+      int_LPdd[iii] += gqMweigh[jjj] * ( ( LP[iii](gqMeval[jjj]) - LP[iii](sing_pnt) + dLP[iii](sing_pnt) * ( sing_pnt - gqMeval[jjj] )  ) / ( ( sing_pnt - gqMeval[jjj] ) * ( sing_pnt - gqMeval[jjj] ) ) ) ;
+    }}
+
+  //Fill RHS
+  for(int iii=0; iii < M ; iii++){
+    VecSetValue(b,iii,int_LP[iii],INSERT_VALUES);
+    VecSetValue(b,iii+M,int_LPd[iii],INSERT_VALUES);
+    VecSetValue(b,iii+2*M,int_LPdd[iii],INSERT_VALUES);
+  }
+
+  ierr = VecAssemblyBegin(b);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(b);CHKERRQ(ierr);
+
+  PC pc;
+
+  //Solve linear system
+  ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
+  ierr = KSPSetType(ksp,KSPPREONLY);CHKERRQ(ierr);
+  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+  ierr = PCSetType(pc,PCLU);CHKERRQ(ierr);
+  ierr = PCFactorSetMatSolverType(pc,MATSOLVERMUMPS);CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A,A);CHKERRQ(ierr);
+  //ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr); //Uncomment if want to allow users to set options at runtime
+  ierr = KSPSolve(ksp,b,x);CHKERRQ(ierr);
+
+  const PetscScalar *weight_tmp ;
+  ierr = VecGetArrayRead(x,&weight_tmp);CHKERRQ(ierr);
+
+  for(int iii=0 ; iii<num_quad ; iii++){ weights[iii] = PetscRealPart(weight_tmp[iii]) ; }
+
+  //Clean up
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
+  ierr = MatDestroy(&A);CHKERRQ(ierr);
+  ierr = VecDestroy(&b);CHKERRQ(ierr);
+  ierr = VecDestroy(&x);CHKERRQ(ierr);
+}
+
+void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs* coeffs,gq_mod* gq_mod,int main_mod,int sec_mod,int row_offset,int col_offset)
 {
   int N_psi=geom->N_psi;
   int N_theta=geom->N_theta;
@@ -102,16 +226,16 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,true);
       
       dw_dh[0]=true; dw_dh[1]=true;   
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_dpdp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_dpdp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       
       dw_dh[0]=true; dw_dh[1]=false; 
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_dpp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_dpp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
        
       dw_dh[0]=false; dw_dh[1]=true;
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_pdp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_pdp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       
       dw_dh[0]=false; dw_dh[1]=false;
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);     
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);     
     }}
 
   //perp-wedge
@@ -122,10 +246,10 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,false);
 
       dw_dh[0]=true; dw_dh[1]=false;
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_dpw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_dpw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       
       dw_dh[0]=false; dw_dh[1]=false;
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_pw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_pw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
     }}
 
   //wedge-perp
@@ -135,10 +259,10 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,true);
 
       dw_dh[0]=false; dw_dh[1]=true; 
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_wdp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_wdp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       
       dw_dh[0]=false; dw_dh[1]=false; 
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_wp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_wp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
     }}
 
   //wedge-wedge
@@ -148,7 +272,7 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,false);
 
       dw_dh[0]=false; dw_dh[1]=false; 
-      fill_submatrix(mats[0],geom,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[0],geom,gq_mod,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
     }}
 
 
@@ -167,10 +291,10 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
 	select_shape(&geom->sec_shape,geom->shape_order,j,true);
 
 	dw_dh[0]=true; dw_dh[1]=false;
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_dpp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_dpp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       
 	dw_dh[0]=false; dw_dh[1]=false;
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);     
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);     
       }}
 
     //perp-wedge
@@ -181,13 +305,13 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
 	select_shape(&geom->sec_shape,geom->shape_order,j,false);
 
 	dw_dh[0]=true; dw_dh[1]=true;
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_dpdw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_dpdw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
 
 	dw_dh[0]=true; dw_dh[1]=false;
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_dpw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_dpw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
 
 	dw_dh[0]=false; dw_dh[1]=false;
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_pw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_pw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       }}
 
     //wedge-perp
@@ -198,7 +322,7 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
 	select_shape(&geom->sec_shape,geom->shape_order,j,true);
       
 	dw_dh[0]=false; dw_dh[1]=false; 
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_wp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_wp,geom->ind_wedge_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       }}
 
     //wedge-wedge
@@ -209,10 +333,10 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
 	select_shape(&geom->sec_shape,geom->shape_order,j,false);
 
 	dw_dh[0]=false; dw_dh[1]=true; 
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_wdw,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_wdw,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
 	
 	dw_dh[0]=false; dw_dh[1]=false; 
-	fill_submatrix(mats[1],geom,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       }}
 
     
@@ -234,7 +358,7 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,true);
 
       dw_dh[0]=false; dw_dh[1]=false;
-      fill_submatrix(mats[counter],geom,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[counter],geom,gq_mod,eq.rad_interp,coeffs->f_pp,geom->ind_perp_main[i],geom->ind_perp_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
     }}
 
   //wedge-wedge
@@ -245,11 +369,10 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
       select_shape(&geom->sec_shape,geom->shape_order,j,false);
 
       dw_dh[0]=false; dw_dh[1]=false;
-      fill_submatrix(mats[counter],geom,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+      fill_submatrix(mats[counter],geom,gq_mod,eq.rad_interp,coeffs->f_ww,geom->ind_wedge_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
     }}
 
 }
-
 
 void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main_mod,int sec_mod, std::string which_mat)
 {
@@ -660,9 +783,7 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
 
 }
 
-
-
-void fill_submatrix(Mat M,geom_shape *geom,double rad_interp[],std::complex<double> matrix_coeffs[],int main_indices[],int sec_indices[],int dim_sub,int row_offset,int col_offset,bool dw_dh[],InsertMode insert_mode)
+void fill_submatrix(Mat M,geom_shape *geom,gq_mod* gq_mod,double rad_interp[],std::complex<double> matrix_coeffs[],int main_indices[],int sec_indices[],int dim_sub,int row_offset,int col_offset,bool dw_dh[],InsertMode insert_mode)
 {
 
   int N_psi=geom->N_psi;
@@ -673,33 +794,30 @@ void fill_submatrix(Mat M,geom_shape *geom,double rad_interp[],std::complex<doub
   MatGetOwnershipRange(M,&start,&end);
   if(end<=row_offset || start>row_offset+dim_sub){return;} //Check that some of the rows to be filled are in the range that this thread owns
 
+  if(geom->quad_type == "gq"){ //Using massive if statement is messy, clean up after proof of concept
+    double (* shape_main[2])(double,double,double);
+    double (* shape_sec[2])(double,double,double);
 
-  double (* shape_main[2])(double,double,double);
-  double (* shape_sec[2])(double,double,double);
+    fill_shapes(shape_main,dw_dh[0],geom->main_shape);
+    fill_shapes(shape_sec,dw_dh[1],geom->sec_shape);
 
+    //Select shape functions
+    double (* shape1[2])(double,double,double);
+    double (* shape2[2])(double,double,double);
+    double (* shape3[2])(double,double,double);
+    double (* shape4[2])(double,double,double);
 
-  fill_shapes(shape_main,dw_dh[0],geom->main_shape);
-  fill_shapes(shape_sec,dw_dh[1],geom->sec_shape);
-
-  //Select shape functions
-  double (* shape1[2])(double,double,double);
-  double (* shape2[2])(double,double,double);
-  double (* shape3[2])(double,double,double);
-  double (* shape4[2])(double,double,double);
-
-  shape1[0]=shape_main[0]; shape1[1]=shape_sec[1];
-  shape2[0]=shape_main[0]; shape2[1]=shape_sec[0];
-  shape3[0]=shape_main[1]; shape3[1]=shape_sec[1];
-  shape4[0]=shape_main[1]; shape4[1]=shape_sec[0];
+    shape1[0]=shape_main[0]; shape1[1]=shape_sec[1];
+    shape2[0]=shape_main[0]; shape2[1]=shape_sec[0];
+    shape3[0]=shape_main[1]; shape3[1]=shape_sec[1];
+    shape4[0]=shape_main[1]; shape4[1]=shape_sec[0];
  
-  //Fill boundary values (assuming that only boundary values can be '-1' i.e. displacement not known (a priori) to vanish in interior)
-  PetscScalar value1,value2,value3,value4;
-
-
+    //Fill boundary values (assuming that only boundary values can be '-1' i.e. displacement not known (a priori) to vanish in interior)
+    PetscScalar value1,value2,value3,value4;
   
-  //Oth gridpoint i.e. first
-  //if(start>row_offset+main_indices[0]){}
-  //else
+    //Oth gridpoint i.e. first
+    //if(start>row_offset+main_indices[0]){}
+    //else
     {
       if(!(main_indices[0]==-1))
 	{
@@ -742,7 +860,36 @@ void fill_submatrix(Mat M,geom_shape *geom,double rad_interp[],std::complex<doub
 	    }
 	}
     }
+
+    //Fill interior values; sort out "start" value (may be greater than 2)
+    int iii=2;
+    while(iii<N_psi-2 ) //&& main_indices[iii]<end)
+      {
+	if(!(main_indices[iii]==-1))
+	  {
+	    if(!(sec_indices[iii-1]==-1))
+	      {
+		value1=integrate1d(matrix_coeffs,rad_interp,shape1,N_psi,num_quad,iii,iii-1);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii-1]+col_offset,value1,insert_mode);
+	      }
+
+	    if(!(sec_indices[iii]==-1))
+	      {
+		value2=integrate1d(matrix_coeffs,rad_interp,shape2,N_psi,num_quad,iii,iii-1);
+		value3=integrate1d(matrix_coeffs,rad_interp,shape3,N_psi,num_quad,iii+1,iii);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii]+col_offset,value2+value3,insert_mode);
+	      }
+
+	    if(!(sec_indices[iii+1]==-1))
+	      {
+		value4=integrate1d(matrix_coeffs,rad_interp,shape4,N_psi,num_quad,iii+1,iii);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii+1]+col_offset,value4,insert_mode);
+	      }
+	  }
       
+	iii++;
+      }
+  
 
     //if(end>row_offset+main_indices[N_psi-2] && start<=row_offset+main_indices[N_psi-2])
     {
@@ -788,35 +935,153 @@ void fill_submatrix(Mat M,geom_shape *geom,double rad_interp[],std::complex<doub
 	    }
 	}
     }
+  }
+  else if(geom->quad_type == "gq_mod"){
+    
+    void (*shape_main[2])(std::vector<double>*,double,double) ;
+    void (*shape_sec[2])(std::vector<double>*,double,double) ;
 
-  //Fill interior values; sort out "start" value (may be greater than 2)
-  int iii=2;
-  while(iii<N_psi-2 ) //&& main_indices[iii]<end)
+    fill_shapes(shape_main,dw_dh[0],geom->main_shape);
+    fill_shapes(shape_sec,dw_dh[1],geom->sec_shape);
+
+    //Select shape functions
+    void (*shape1[2])(std::vector<double>*,double,double) ;
+    void (*shape2[2])(std::vector<double>*,double,double) ;
+    void (*shape3[2])(std::vector<double>*,double,double) ;
+    void (*shape4[2])(std::vector<double>*,double,double) ;
+
+    shape1[0]=shape_main[0]; shape1[1]=shape_sec[1];
+    shape2[0]=shape_main[0]; shape2[1]=shape_sec[0];
+    shape3[0]=shape_main[1]; shape3[1]=shape_sec[1];
+    shape4[0]=shape_main[1]; shape4[1]=shape_sec[0];
+
+    //Set wt_gq flag to zero so that gq_mod is used initially
+    gq_mod->wt_gq = 0 ;
+ 
+    //Fill boundary values (assuming that only boundary values can be '-1' i.e. displacement not known (a priori) to vanish in interior)
+    PetscScalar value1,value2,value3,value4;
+  
+    //Oth gridpoint i.e. first
+    //if(start>row_offset+main_indices[0]){}
+    //else
     {
-      if(!(main_indices[iii]==-1))
+      if(!(main_indices[0]==-1))
 	{
-	  if(!(sec_indices[iii-1]==-1))
+	  if(!(sec_indices[0]==-1))
 	    {
-	      value1=integrate1d(matrix_coeffs,rad_interp,shape1,N_psi,num_quad,iii,iii-1);
-	      MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii-1]+col_offset,value1,insert_mode);
+	      value3=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape3,N_psi,num_quad,1,0);
+	      MatSetValue(M,main_indices[0]+row_offset,sec_indices[0]+col_offset,value3,insert_mode);	 
 	    }
 
-	  if(!(sec_indices[iii]==-1))
+	  if(!(sec_indices[1]==-1))
 	    {
-	      value2=integrate1d(matrix_coeffs,rad_interp,shape2,N_psi,num_quad,iii,iii-1);
-	      value3=integrate1d(matrix_coeffs,rad_interp,shape3,N_psi,num_quad,iii+1,iii);
-	      MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii]+col_offset,value2+value3,insert_mode);
-	    }
-
-	  if(!(sec_indices[iii+1]==-1))
-	    {
-	      value4=integrate1d(matrix_coeffs,rad_interp,shape4,N_psi,num_quad,iii+1,iii);
-	      MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii+1]+col_offset,value4,insert_mode);
+	      value4=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape4,N_psi,num_quad,1,0);
+	      MatSetValue(M,main_indices[0]+row_offset,sec_indices[1]+col_offset,value4,insert_mode);
 	    }
 	}
-      
-	  iii++;
     }
+
+    //if(end>row_offset+main_indices[1] && start<=row_offset+main_indices[1])
+    {
+      if(!(main_indices[1]==-1))
+	{
+	  //1st gridpoint
+	  if(!(sec_indices[0]==-1))
+	    {
+	      value1=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape1,N_psi,num_quad,1,0);
+	      MatSetValue(M,main_indices[1]+row_offset,sec_indices[0]+col_offset,value1,insert_mode);
+	    }
+
+	  if(!(sec_indices[1]==-1))
+	    {
+	      value2=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape2,N_psi,num_quad,1,0);
+	      value3=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape3,N_psi,num_quad,2,1);
+	      MatSetValue(M,main_indices[1]+row_offset,sec_indices[1]+col_offset,value2+value3,insert_mode);
+	    }
+
+	  if(!(sec_indices[2]==-1))
+	    {
+	      value4=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape4,N_psi,num_quad,2,1);
+	      MatSetValue(M,main_indices[1]+row_offset,sec_indices[2]+col_offset,value4,insert_mode);
+	    }
+	}
+    }
+
+    //Fill interior values; sort out "start" value (may be greater than 2)
+    int iii=2;
+    while(iii<N_psi-2 ) //&& main_indices[iii]<end)
+      {
+	if(!(main_indices[iii]==-1))
+	  {
+	    if(!(sec_indices[iii-1]==-1))
+	      {
+		value1=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape1,N_psi,num_quad,iii,iii-1);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii-1]+col_offset,value1,insert_mode);
+	      }
+
+	    if(!(sec_indices[iii]==-1))
+	      {
+		value2=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape2,N_psi,num_quad,iii,iii-1);
+		value3=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape3,N_psi,num_quad,iii+1,iii);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii]+col_offset,value2+value3,insert_mode);
+	      }
+
+	    if(!(sec_indices[iii+1]==-1))
+	      {
+		value4=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape4,N_psi,num_quad,iii+1,iii);
+		MatSetValue(M,main_indices[iii]+row_offset,sec_indices[iii+1]+col_offset,value4,insert_mode);
+	      }
+	  }
+      
+	iii++;
+      }
+  
+
+    //if(end>row_offset+main_indices[N_psi-2] && start<=row_offset+main_indices[N_psi-2])
+    {
+      if(!(main_indices[N_psi-2]==-1))
+	{
+	  //(N-2)th
+	  if(!(sec_indices[N_psi-3]==-1))
+	    {
+	      value1=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape1,N_psi,num_quad,N_psi-2,N_psi-3);
+	      MatSetValue(M,main_indices[N_psi-2]+row_offset,sec_indices[N_psi-3]+col_offset,value1,insert_mode);
+	    }
+
+	  if(!(sec_indices[N_psi-2]==-1))
+	    {
+	      value2=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape2,N_psi,num_quad,N_psi-2,N_psi-3);
+	      value3=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape3,N_psi,num_quad,N_psi-1,N_psi-2);
+	      MatSetValue(M,main_indices[N_psi-2]+row_offset,sec_indices[N_psi-2]+col_offset,value2+value3,insert_mode);
+	    }
+  
+	  if(!(sec_indices[N_psi-1]==-1))
+	    {
+	      value4=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape4,N_psi,num_quad,N_psi-1,N_psi-2);
+	      MatSetValue(M,main_indices[N_psi-2]+row_offset,sec_indices[N_psi-1]+col_offset,value4,insert_mode);
+	    }
+	}
+    }
+	  
+    //if(end>row_offset+main_indices[N_psi-1] && start<=row_offset+main_indices[N_psi-1])
+    {
+      //(N-1)th i.e. final
+      if(!(main_indices[N_psi-1]==-1))
+	{
+	  if(!(sec_indices[N_psi-2]==-1))
+	    {
+	      value1=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape1,N_psi,num_quad,N_psi-1,N_psi-2);
+	      MatSetValue(M,main_indices[N_psi-1]+row_offset,sec_indices[N_psi-2]+col_offset,value1,insert_mode);
+	    }
+      
+	  if(!(sec_indices[N_psi-1]==-1))
+	    {
+	      value2=integrate1d(matrix_coeffs,gq_mod,rad_interp,shape2,N_psi,num_quad,N_psi-1,N_psi-2);
+	      MatSetValue(M,main_indices[N_psi-1]+row_offset,sec_indices[N_psi-1]+col_offset,value2,insert_mode);
+	    }
+	}
+    }
+  }
 
 }
 
@@ -826,18 +1091,20 @@ std::complex<double> integrate1d(std::complex<double> func_grid[],double rad_int
 {
   assert( upper_point >= lower_point );
 
+  if(shape[0] == N_NULL || shape[1] == N_NULL){ return 0.0; }
+
   //Guassian quadrature
   std::complex<double> result = 0.0;
   double upper = rad_interp[upper_point * (num_quad+1)] ;
   double lower = rad_interp[lower_point * (num_quad+1)] ;
 
+  const double* gqNeval;
+  const double* gqNweigh;
+
+  assign_gq(gqNeval,gqNweigh,num_quad);
+
   for(int iii=0 ; iii < num_quad; iii++){
-    if(num_quad == 4){
-      result += gq4weigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape[0](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) ;
-    }
-    else if(num_quad == 6){
-      result += gq6weigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape[0](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) ;
-    }
+    result += gqNweigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape[0](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) * shape[1](rad_interp[lower_point * (num_quad+1) + iii + 1],upper,lower) ;
   }
 
   result *= 0.5 * ( upper - lower );
@@ -845,6 +1112,118 @@ std::complex<double> integrate1d(std::complex<double> func_grid[],double rad_int
   return result;
 }
 
+std::complex<double> integrate1d(std::complex<double> func_grid[],gq_mod* gq_mod,double rad_interp[],void (*shape[])(std::vector<double>*,double,double),int N_psi,int num_quad,int upper_point,int lower_point)
+{
+  assert( upper_point >= lower_point );
+  
+  std::complex<double> result = 0.0;
+  double upper = rad_interp[upper_point * (num_quad+1)] ;
+  double lower = rad_interp[lower_point * (num_quad+1)] ;
+
+  if(shape[0] == N_NULL_mod || shape[1] == N_NULL_mod){ return 0.0; } //Does this comparison always work? Is it based on addresses?
+
+  std::vector<double> shape1,shape2;
+  shape[0](&shape1,upper,lower);
+  shape[1](&shape2,upper,lower);
+
+  std::vector<double> final_pol = combine_pols(shape1,shape2) ;
+
+  const double* gqNeval;
+  const double* gqNweigh;
+
+  assign_gq(gqNeval,gqNweigh,num_quad);
+
+  double shape_out;
+  if(gq_mod->wt_gq == 1){ //Just do regular gq integration
+      
+    for(int iii=0 ; iii < num_quad; iii++){
+      
+      shape_out = 0.0 ;
+      for( int jjj = 0 ; jjj < final_pol.size() ; jjj++ ){
+	shape_out += final_pol[jjj] * pow(rad_interp[lower_point * (num_quad+1) + iii + 1],jjj) ;
+      }
+      
+      result += gqNweigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ;
+    }
+
+    result *= 0.5 * ( upper - lower );
+
+    return result;
+  }
+  else{
+    std::complex<double> result_compare = 0.0 ;
+    if(final_pol.size() == 1 || final_pol.size() == 2){ //Case of polynomial < O(2)
+      for(int iii=0 ; iii < num_quad; iii++){
+	//Calculate quadrature via gq_mod
+	shape_out = 0.0 ;
+	for( int jjj = 0 ; jjj < final_pol.size() ; jjj++ ){
+	  shape_out += final_pol[jjj] * pow(rad_interp[lower_point * (num_quad+1) + iii + 1],jjj) ;
+	}
+
+	result += gq_mod->weights[lower_point][iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ;
+	
+	//Calc normal gq to compare
+	result_compare += ( gqNweigh[iii] - gq_mod->weights[lower_point][iii] ) * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ; 
+      }
+
+      result *= 0.5 * ( upper - lower );
+      result_compare *= 0.5 * ( upper - lower );
+
+      if( std::abs( result_compare ) < gq_mod->tol ){ gq_mod->wt_gq = 1 ;}
+
+      return result;
+    }
+    else{
+      for(int iii=0 ; iii < num_quad; iii++){
+	//Calculate quadrature via gq_mod
+
+	//Ln/cn terms
+	shape_out = 0.0 ;
+	for( int jjj = 0 ; jjj < 2 ; jjj++ ){
+	  shape_out += final_pol[jjj] * pow(rad_interp[lower_point * (num_quad+1) + iii + 1],jjj) ;
+	}
+	
+	//Constant/linear parts of quadrature done via gq_mod
+	result += gq_mod->weights[lower_point][iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ;
+
+	//Take diff with normal gq on ln/cn parts to compare
+	result_compare += ( gqNweigh[iii] - gq_mod->weights[lower_point][iii] ) * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ;
+
+	//Higher order terms
+	shape_out = 0.0 ;
+	for( int jjj = 2 ; jjj < final_pol.size() ; jjj++ ){
+	  shape_out += final_pol[jjj] * pow(rad_interp[lower_point * (num_quad+1) + iii + 1],jjj) ;
+	}
+	
+	//Higher order terms done via regular gq
+	result += gqNweigh[iii] * func_grid[lower_point * (num_quad+1) + iii + 1] * shape_out ;
+      }
+
+      result *= 0.5 * ( upper - lower );
+      result_compare *= 0.5 * ( upper - lower );
+
+      if( std::abs( result_compare ) < gq_mod->tol ){ gq_mod->wt_gq = 1 ; }
+
+      return result; 
+    }
+  }
+  
+  return 0.0;
+}
+
+std::vector<double> combine_pols(std::vector<double> shape1,std::vector<double> shape2)
+{
+  int len1 = shape1.size() ;
+  int len2 = shape2.size() ;
+  std::vector<double> out_vec (len1 + len2 - 1,0.0) ;
+
+  for(int iii = 0; iii < len1 ; iii++){
+    for(int jjj = 0 ; jjj < len2 ; jjj++){
+      out_vec[iii+jjj] += shape1[iii] * shape2[jjj] ;
+    }}
+
+  return out_vec ;
+}
 
 
 void select_shape(std::string* out_shape,std::string shape_order,int shape_num,bool is_perp)
@@ -1059,6 +1438,134 @@ void fill_shapes(double (*shape[])(double,double,double),bool deriv,std::string 
 }
 
 
+void fill_shapes(void (*shape[])(std::vector<double>*,double,double),bool deriv,std::string shape_order)
+{
+  /****************************************************************************************************************************************************************************/
+  //LINEAR
+
+  if(shape_order=="NHCN"){
+    if(deriv){
+      shape[0]=N_NULL_mod;
+      shape[1]=N_NULL_mod;
+    }
+    else{
+      shape[0]=N_NULL_mod;
+      shape[1]=N_A_nhcn_mod;
+    }  
+  }
+  else if(shape_order=="NHLN"){
+    if(deriv){
+      shape[0]=dN_A_nhln_mod;
+      shape[1]=dN_B_nhln_mod;
+    }
+    else{
+      shape[0]=N_A_nhln_mod;
+      shape[1]=N_B_nhln_mod;
+    } 
+  }
+  else if(shape_order=="HLN"){
+    if(deriv){
+      shape[0]=dN_A_hln_mod;
+      shape[1]=dN_B_hln_mod;
+    }
+    else{
+      shape[0]=N_A_hln_mod;
+      shape[1]=N_B_hln_mod;
+    }
+  }
+  else if(shape_order=="NHQD_1"){
+    if(deriv){
+      shape[0]=dN_A_nhqd_mod;
+      shape[1]=dN_B_nhqd_mod;
+    }
+    else{
+      shape[0]=N_A_nhqd_mod;
+      shape[1]=N_B_nhqd_mod;
+    } 
+  }
+  else if(shape_order=="NHQD_2"){
+    if(deriv){
+      shape[0]=N_NULL_mod;
+      shape[1]=dN_C_nhqd_mod;
+    }
+    else{
+      shape[0]=N_NULL_mod;
+      shape[1]=N_C_nhqd_mod;
+    } 
+  }
+  else if(shape_order=="HQD_1"){
+    if(deriv){
+      shape[0]=dN_A_hqd_mod;
+      shape[1]=dN_B_hqd_mod;
+    }
+    else{
+      shape[0]=N_A_hqd_mod;
+      shape[1]=N_B_hqd_mod;
+    } 
+  }
+  else if(shape_order=="HQD_2"){
+    if(deriv){
+      shape[0]=N_NULL_mod;
+      shape[1]=dN_C_hqd_mod;
+    }
+    else{
+      shape[0]=N_NULL_mod;
+      shape[1]=N_C_hqd_mod;
+    } 
+  }
+  else if(shape_order=="NHCB_1"){
+    if(deriv){
+      shape[0]=dN_A_nhcb_mod;
+      shape[1]=dN_B_nhcb_mod;
+    }
+    else{
+      shape[0]=N_A_nhcb_mod;
+      shape[1]=N_B_nhcb_mod;
+    } 
+  }
+  else if(shape_order=="NHCB_2"){
+    if(deriv){
+      shape[0]=dN_C_nhcb_mod;
+      shape[1]=dN_D_nhcb_mod;
+    }
+    else{
+      shape[0]=N_C_nhcb_mod;
+      shape[1]=N_D_nhcb_mod;
+    } 
+  }
+  else if(shape_order=="NHQR_1"){
+    if(deriv){
+      shape[0]=dN_A_nhqr_mod;
+      shape[1]=dN_B_nhqr_mod;
+    }
+    else{
+      shape[0]=N_A_nhqr_mod;
+      shape[1]=N_B_nhqr_mod;
+    } 
+  }
+  else if(shape_order=="NHQR_2"){
+    if(deriv){
+      shape[0]=N_NULL_mod;
+      shape[1]=dN_C_nhqr_mod;
+    }
+    else{
+      shape[0]=N_NULL_mod;
+      shape[1]=N_C_nhqr_mod;
+    } 
+  }
+  else if(shape_order=="NHQR_3"){
+    if(deriv){
+      shape[0]=dN_D_nhqr_mod;
+      shape[1]=dN_E_nhqr_mod;
+    }
+    else{
+      shape[0]=N_D_nhqr_mod;
+      shape[1]=N_E_nhqr_mod;
+    } 
+  }
+  else{std::cout << "That shape order is not recognised (fill_shapes)" << std::endl;}
+
+}
 
 
 
@@ -1068,8 +1575,8 @@ void calc_fourier_sym(double grid_func[],std::complex<double> fourier_func[],int
   fftw_plan plan;
 
   double *in = new double[N_theta];
-  int size=(N_theta/2)+1; if(!(N_theta%2==0)){size=((N_theta-1)/2)+1;}
-  int fourier_size=(N_theta/2); if(!(N_theta%2==0)){fourier_size=((N_theta-1)/2)+1;}
+  int size=(N_theta/2)+1; if(!(N_theta%2==0) /*If N_theta is odd*/){size=((N_theta-1)/2)+1;}
+  int fourier_size=(N_theta/2); if(!(N_theta%2==0) /*If N_theta is odd*/){fourier_size=((N_theta-1)/2)+1;}
 
   out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
   for(int iii=0;iii<size;iii++){out[iii][0]=0.0; out[iii][1]=0.0;}
