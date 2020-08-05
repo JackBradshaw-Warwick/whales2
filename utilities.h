@@ -5,9 +5,12 @@
 
 void init_equil(equil_fields *equil,int N_psi,int N_interp,int N_theta);
 void init_coeffs(matrix_coeffs* coeffs,geom_shape geom);
+void init_gq_mod(gq_mod* gq_mod, geom_shape geom, equil_fields eq);
+void delete_gq_mod(gq_mod* gq_mod, int N_psi);
 void delete_full_geom_shape(geom_shape* geom);
 void delete_full_equil_fields(equil_fields* eq);
 void delete_full_matrix_coeffs(matrix_coeffs* coeffs);
+void assign_gq( const double*& gq_eval , const double*& gq_weigh , int num_quad);
 void udsym(equil_fields* eq, geom_shape geom);
 int calc_hermitian_diff(Mat M,int row_dim,int col_dim);
 void normalise(PetscScalar perp_values[],PetscScalar wedge_values[],int N_r,int m_range,int num_eig,bool rotate);
