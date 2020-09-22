@@ -5,95 +5,175 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
   std::string deriv_order="Quadratic";
   int N_psi=geom.N_psi;
   int N_theta=geom.N_theta;
-  std::complex<double> imag_unit=1.0i;
   double tor_mod=static_cast<double>(geom.tor_mod);
 
   std::string value;
   read_in("analytical_type",value);
-	
-  if(value=="cylinder_theta" || value=="cylinder_screw"){tor_mod=static_cast<double>(geom.m_min);}
-
-  
-  //if(shape_order=="NHLC")
-    {
-      std::complex<double> *perp_temp=new std::complex<double>[N_psi*N_theta];
-      std::complex<double> *wedge_temp=new std::complex<double>[N_psi*N_theta];
-      std::complex<double> *workspace_1=new std::complex<double>[N_psi*N_theta];
-      std::complex<double> *workspace_2=new std::complex<double>[N_psi*N_theta];
-      double *workspace_doub=new double[N_psi*N_theta];
+ 
+  std::complex<double> *perp_temp=new std::complex<double>[N_psi*N_theta];
+  std::complex<double> *wedge_temp=new std::complex<double>[N_psi*N_theta];
+  std::complex<double> *workspace_1=new std::complex<double>[N_psi*N_theta];
+  std::complex<double> *workspace_2=new std::complex<double>[N_psi*N_theta];
+  double *workspace_doub=new double[N_psi*N_theta];
       
-      for(int iii=0;iii<num_sols;iii++){
+  for(int iii=0;iii<num_sols;iii++){
 	
-	for(int jjj=0;jjj<N_psi;jjj++){
-	  for(int kkk=0;kkk<N_theta;kkk++){ //Normalise to regular \xi_\perp and \xi_\wedge. 
-	    perp_temp[jjj*N_theta+kkk]=xi_perp[iii*N_psi*N_theta+jjj*N_theta+kkk] / eq.jacob[jjj*N_theta+kkk] ;
-	    wedge_temp[jjj*N_theta+kkk]=xi_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] / sqrt( eq.g_pp[jjj*N_theta+kkk] / eq.mag_sq[jjj*N_theta+kkk] ) ;
-	  }}
+    for(int jjj=0;jjj<N_psi;jjj++){
+      for(int kkk=0;kkk<N_theta;kkk++){ //Normalise to regular \xi_\perp and \xi_\wedge. 
+	perp_temp[jjj*N_theta+kkk]=xi_perp[iii*N_psi*N_theta+jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	wedge_temp[jjj*N_theta+kkk]=xi_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] / sqrt( eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] / eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] ) ;
+      }}
 
-	/******************************************************************************************************************************************************************************************/
-	//b-perp
+    if(value == "cylinder_theta" ){
+
+      /******************************************************************************************************************************************************************************************/
+      //b-perp
 	  
-	deriv_ang(workspace_1,perp_temp,eq.theta_grid,N_theta,N_psi,false);
+      for(int jjj=0;jjj<N_psi;jjj++){
+	for(int kkk=0;kkk<N_theta;kkk++){
+	  b_perp[iii*N_psi*N_theta+jjj*N_theta+kkk]= imag_unit * tor_mod * perp_temp[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
 
-	for(int jjj=0;jjj<N_psi;jjj++){
-	  for(int kkk=0;kkk<N_theta;kkk++){
-	    b_perp[iii*N_psi*N_theta+jjj*N_theta+kkk]=eq.f_psi[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk]*imag_unit*tor_mod*perp_temp[jjj*N_theta+kkk]+(1.0/eq.jacob[jjj*N_theta+kkk])*workspace_1[jjj*N_theta+kkk];
-	  }}
+      /******************************************************************************************************************************************************************************************/
+      //b-wedge
 
-	/******************************************************************************************************************************************************************************************/
-	//b-wedge
-	
-	deriv_ang(workspace_1,wedge_temp,eq.theta_grid,N_theta,N_psi,false);
+      for(int jjj=0;jjj<N_psi;jjj++){
+	for(int kkk=0;kkk<N_theta;kkk++){
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] = imag_unit * tor_mod * wedge_temp[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] *= eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] / eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
 
-	for(int jjj=0;jjj<N_psi;jjj++){
-	  for(int kkk=0;kkk<N_theta;kkk++){
-	    b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk]=(eq.g_pp[jjj*N_theta+kkk]/eq.mag_sq[jjj*N_theta+kkk])*(eq.f_psi[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk]*imag_unit*tor_mod*wedge_temp[jjj*N_theta+kkk]+(1.0/eq.jacob[jjj*N_theta+kkk])*workspace_1[jjj*N_theta+kkk]-eq.neg_shear[jjj*N_theta+kkk]*perp_temp[jjj*N_theta+kkk]);
-	  }}
+      /******************************************************************************************************************************************************************************************/
+      //b-parallel
 
-	/******************************************************************************************************************************************************************************************/
-	//b-parallel
+      //-B^2 ( div dot \vec{xi}_perp )
+      deriv_1d(workspace_2,perp_temp,eq.rad_var,N_psi,N_theta,true,deriv_order);
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] *= eq.drad_dpsi[jjj*(geom.num_quad+1)] ; }}
 
-	//-(div B^2) dot \vec{xi_perp}
-	deriv_1d(workspace_doub,eq.mag_sq,eq.psi_grid,N_psi,N_theta,true,deriv_order);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]=-workspace_doub[jjj*N_theta+kkk];}}
-	deriv_ang(workspace_doub,eq.mag_sq,eq.theta_grid,N_theta,N_psi,false);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]-=(eq.g_pt[jjj*N_theta+kkk]/eq.g_pp[jjj*N_theta+kkk])*workspace_doub[jjj*N_theta+kkk];}}
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]*=perp_temp[jjj*N_theta+kkk];}}
-
-	//-B^2 (div dot \vec{xi_perp})
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){workspace_1[jjj*N_theta+kkk]=eq.jacob[jjj*N_theta+kkk]*perp_temp[jjj*N_theta+kkk];}}
-	deriv_1d(workspace_2,workspace_1,eq.psi_grid,N_psi,N_theta,true,deriv_order);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]-=(eq.mag_sq[jjj*N_theta+kkk]/eq.jacob[jjj*N_theta+kkk])*workspace_2[jjj*N_theta+kkk];}}
-
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){workspace_1[jjj*N_theta+kkk]=(eq.g_pt[jjj*N_theta+kkk]/eq.g_pp[jjj*N_theta+kkk])*eq.jacob[jjj*N_theta+kkk]*perp_temp[jjj*N_theta+kkk];}}
-	deriv_ang(workspace_2,workspace_1,eq.theta_grid,N_theta,N_psi,false);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]-=(eq.mag_sq[jjj*N_theta+kkk]/eq.jacob[jjj*N_theta+kkk])*workspace_2[jjj*N_theta+kkk];}}
-
-	//-div dot (B^2 \vec{xi_wedge})
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]-=eq.g_pp[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk]*imag_unit*tor_mod*wedge_temp[jjj*N_theta+kkk];}}
-
-	deriv_ang(workspace_1,wedge_temp,eq.theta_grid,N_theta,N_psi,false);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]+=(eq.f_psi[jjj*N_theta+kkk]/eq.jacob[jjj*N_theta+kkk])*workspace_1[jjj*N_theta+kkk];}}
-
-	//-mu j dot T xi_perp	  
-	if(value=="cylinder_theta" || value=="cylinder_screw"){}
-	else{
-	  for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){workspace_1[jjj*N_theta+kkk]=(1.0-eq.jacob[jjj*N_theta+kkk]*eq.jacob[jjj*N_theta+kkk]*eq.g_pp[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk]*eq.g_tt[jjj*N_theta+kkk])/(eq.jacob[jjj*N_theta+kkk]*eq.g_pt[jjj*N_theta+kkk]);}}
-	  deriv_ang(workspace_2,workspace_1,eq.theta_grid,N_theta,N_psi,false);
-	  for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]-=perp_temp[jjj*N_theta+kkk]*workspace_2[jjj*N_theta+kkk]/eq.jacob[jjj*N_theta+kkk];}}
-	}
-
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){workspace_1[jjj*N_theta+kkk]=eq.jacob[jjj*N_theta+kkk]*eq.g_pp[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk];}}
-	deriv_1d(workspace_2,workspace_1,eq.psi_grid,N_psi,N_theta,true,deriv_order);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]+=perp_temp[jjj*N_theta+kkk]*workspace_2[jjj*N_theta+kkk]/eq.jacob[jjj*N_theta+kkk];}}
-
-	deriv_1d(workspace_doub,eq.f_psi,eq.psi_grid,N_psi,N_theta,true,deriv_order);
-	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){b_par[iii*N_psi*N_theta+jjj*N_theta+kkk]+=eq.f_psi[jjj*N_theta+kkk]*eq.g_phph[jjj*N_theta+kkk]*workspace_doub[jjj*N_theta+kkk]*perp_temp[jjj*N_theta+kkk];}}
-
+      if(shape_order=="NHLC"){
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[jjj*N_theta+kkk] = 0.5 * ( workspace_2[jjj*N_theta+kkk] + workspace_2[(jjj+1)*N_theta+kkk] ) ; }}
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] = workspace_1[jjj*N_theta+kkk] ; }}
+	for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[(N_psi-1)*N_theta+kkk] = 0.0 ; }
       }
-      
-      delete[] perp_temp;delete[] wedge_temp;delete[] workspace_1;delete[] workspace_2;delete[] workspace_doub;
+	  
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] = -eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] * ( workspace_2[jjj*N_theta+kkk] + imag_unit * geom.m_min * wedge_temp[jjj*N_theta+kkk] ) ;
+	}} //ASSUMES ONLY ONE POL-MODE USED (I.E. M_RANGE = 1)	  
+
+	  
     }
+    else{
+	  
+
+      /******************************************************************************************************************************************************************************************/
+      //b-perp
+	  
+      deriv_ang(workspace_1,perp_temp,eq.theta_grid,N_theta,N_psi,false);
+
+      for(int jjj=0;jjj<N_psi;jjj++){
+	for(int kkk=0;kkk<N_theta;kkk++){
+	  b_perp[iii*N_psi*N_theta+jjj*N_theta+kkk] = eq.f_psi[jjj*(geom.num_quad+1)*N_theta+kkk] * eq.g_phph[jjj*(geom.num_quad+1)*N_theta+kkk] * imag_unit * tor_mod * perp_temp[jjj*N_theta+kkk] ;
+	  b_perp[iii*N_psi*N_theta+jjj*N_theta+kkk] += workspace_1[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      /******************************************************************************************************************************************************************************************/
+      //b-wedge    
+	
+      deriv_ang(workspace_1,wedge_temp,eq.theta_grid,N_theta,N_psi,false);
+
+      for(int jjj=0;jjj<N_psi;jjj++){
+	for(int kkk=0;kkk<N_theta;kkk++){
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] = eq.f_psi[jjj*(geom.num_quad+1)*N_theta+kkk] * eq.g_phph[jjj*(geom.num_quad+1)*N_theta+kkk] * imag_unit * tor_mod * wedge_temp[jjj*N_theta+kkk] ;
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] += workspace_1[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      if(shape_order=="NHLC"){
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] = 0.5 * ( perp_temp[jjj*N_theta+kkk] + perp_temp[(jjj+1)*N_theta+kkk] ) ; }}
+	for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[(N_psi-1)*N_theta+kkk] = 0.0 ; }	
+      }
+      else{
+	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] = perp_temp[jjj*N_theta+kkk] ; }}
+      }
+
+      for(int jjj=0;jjj<N_psi;jjj++){
+	for(int kkk=0;kkk<N_theta;kkk++){
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] -= eq.neg_shear[jjj*(geom.num_quad+1)*N_theta+kkk] * workspace_2[jjj*N_theta+kkk] ;
+	  b_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] *= eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] / eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      /******************************************************************************************************************************************************************************************/
+      //b-parallel
+
+      //-div dot (B^2 \vec{xi_perp})
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  workspace_1[jjj*N_theta+kkk] = eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] * eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] * perp_temp[jjj*N_theta+kkk] ;
+	}}
+
+      deriv_1d(workspace_2,workspace_1,eq.rad_var,N_psi,N_theta,true,deriv_order);
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] *= eq.drad_dpsi[jjj*(geom.num_quad+1)] ;}}
+
+      if(shape_order=="NHLC"){
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[jjj*N_theta+kkk] = 0.5 * ( workspace_2[jjj*N_theta+kkk] + workspace_2[(jjj+1)*N_theta+kkk] ) ; }}
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] = workspace_1[jjj*N_theta+kkk] ; }}
+	for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[(N_psi-1)*N_theta+kkk] = 0.0 ; }
+      }
+
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] = -workspace_2[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  workspace_1[jjj*N_theta+kkk] = ( eq.g_pt[jjj*(geom.num_quad+1)*N_theta+kkk]  / eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] ) * eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] * eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] * perp_temp[jjj*N_theta+kkk] ;
+	}}
+
+      deriv_ang(workspace_2,workspace_1,eq.theta_grid,N_theta,N_psi,false);
+
+      if(shape_order=="NHLC"){
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[jjj*N_theta+kkk] = 0.5 * ( workspace_2[jjj*N_theta+kkk] + workspace_2[(jjj+1)*N_theta+kkk] ) ; }}
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] = workspace_1[jjj*N_theta+kkk] ; }}
+	for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[(N_psi-1)*N_theta+kkk] = 0.0 ; }
+      }
+
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] -= workspace_2[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+	  
+      //-div dot (B^2 \vec{xi_wedge})
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] -= eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] * eq.g_phph[jjj*(geom.num_quad+1)*N_theta+kkk] * imag_unit * tor_mod * wedge_temp[jjj*N_theta+kkk] ;
+	}}
+
+      deriv_ang(workspace_1,wedge_temp,eq.theta_grid,N_theta,N_psi,false);
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] += eq.f_psi[jjj*(geom.num_quad+1)*N_theta+kkk] * workspace_1[jjj*N_theta+kkk] / eq.jacob[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      //-mu_0 p'_0 xi_perp	  
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  workspace_1[jjj*N_theta+kkk] = eq.pres[jjj*(geom.num_quad+1)*N_theta+kkk] ;
+	}}
+
+      deriv_1d(workspace_2,workspace_1,eq.rad_var,N_psi,N_theta,true,deriv_order);
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_2[jjj*N_theta+kkk] *= eq.drad_dpsi[jjj*(geom.num_quad+1)] ;}}
+
+      if(shape_order=="NHLC"){
+	for(int jjj=0;jjj<N_psi-1;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[jjj*N_theta+kkk] = 0.5 * ( perp_temp[jjj*N_theta+kkk] + perp_temp[(jjj+1)*N_theta+kkk] ) ; }}
+	for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[(N_psi-1)*N_theta+kkk] = 0.0 ; }	
+      }
+      else{
+	for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){ workspace_1[jjj*N_theta+kkk] = perp_temp[jjj*N_theta+kkk] ; }}
+      }
+
+      for(int jjj=0;jjj<N_psi;jjj++){for(int kkk=0;kkk<N_theta;kkk++){
+	  b_par[iii*N_psi*N_theta+jjj*N_theta+kkk] -= mu_0 * workspace_2[jjj*N_theta+kkk] * workspace_1[jjj*N_theta+kkk] ;
+	}}
+	  
+    }
+  }
+      
+  delete[] perp_temp;delete[] wedge_temp;delete[] workspace_1;delete[] workspace_2;delete[] workspace_doub;
+ 
 }
 
 

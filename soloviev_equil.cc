@@ -224,7 +224,7 @@ int fill_sol(equil_fields *equil,geom_shape geom)
   c5=PetscRealPart(coeffs_out[5]);
   c6=PetscRealPart(coeffs_out[6]);
 
-  for(int iii=0;iii<7;iii++){std::cout << " c " << iii << "   : " << coeffs_out[iii] << std::endl;}
+  for(int iii=0;iii<7;iii++){std::cout << " c_" << iii << "   : " << coeffs_out[iii] << std::endl;}
 
 
 
@@ -361,7 +361,8 @@ int fill_sol(equil_fields *equil,geom_shape geom)
 
   double B_0,beta_0;
   read_in("B_0",value); B_0=std::stod( value );
-  read_in("beta_0",value); beta_0=std::stod( value );
+
+  beta_0 = 2.0 * solov_C * rad_max / ( B_0 * B_0 ) ; //beta_0 set by zero-pressure b.c.
 
   for(int iii=0;iii<N_interp;iii++){
     for(int jjj=0;jjj<N_theta;jjj++){

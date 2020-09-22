@@ -35,7 +35,7 @@ void fill_sol_simp(equil_fields *equil,geom_shape geom)
   sol_A=2.0*(1.0+(1.0-0.25*s_inv_asp*s_inv_asp)/(s_elong*s_elong));
   sol_B=4.0*s_inv_asp*(1.0+s_triang*(1.0-0.25*s_inv_asp*s_inv_asp)/(s_elong*s_elong));
 
-  s_beta_0=sol_B*s_inv_asp*mu_0/(s_alpha*s_alpha); //s_beta_0 is constrained by condition of zero pressure boundary
+  s_beta_0=sol_B*s_inv_asp/(s_alpha*s_alpha); //s_beta_0 is constrained by condition of zero pressure boundary
   //s_alpha=sqrt(sol_B*s_inv_asp*mu_0*s_B_0/s_beta_0); //S_Alpha is constrained by condition of zero pressure boundary
   double flux_0=s_min_rad*s_min_rad*s_B_0/s_alpha;
 
@@ -75,7 +75,7 @@ void fill_sol_simp(equil_fields *equil,geom_shape geom)
 
   for(int iii=0;iii<geom.N_interp;iii++){
     for(int jjj=0;jjj<geom.N_theta;jjj++){
-      equil->pres[iii*geom.N_theta+jjj]=(0.5*s_beta_0*s_B_0*s_B_0/mu_0)-sol_F*equil->psi_interp[iii];
+      equil->pres[iii*geom.N_theta+jjj]=(0.5*s_beta_0*s_B_0*s_B_0 - sol_F*equil->psi_interp[iii]) / mu_0;
       equil->f_psi[iii*geom.N_theta+jjj]=sqrt(s_R_0*s_R_0*s_B_0*s_B_0-2.0*sol_E*equil->psi_interp[iii]);
     }}
 }

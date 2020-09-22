@@ -3,7 +3,7 @@
 
 //double con_tmp=0.60;
 //double rec=(0.5-con_tmp)+2.0;
-double con=5.0;
+double con=2.0;
 
 double g_B_0,g_min_rad,g_alpha;
 int g_counter=0;
@@ -55,7 +55,7 @@ double pres(double r, double theta)
   double beta_0=1.0; 
   read_in("beta_0",value); beta_0=std::stod( value );
 
-  return 0.5*B_0*B_0*beta_0 - con*con*r*r; 
+  return  ( 0.5*B_0*B_0*beta_0 - B_0*B_0*r - con*con*r*r - 0.5*B_0*B_0*r*r ) / mu_0 ; 
 }
 
 double f_psi(double r, double theta)
@@ -65,7 +65,7 @@ double f_psi(double r, double theta)
   read_in("B_0",value); B_0=std::stod( value );
   
   theta=1.0/0.0; //In case I accidentally put theta dependance in return again
-  return B_0;
+  return -B_0 * ( 1.0 + r ) ;
 }
 
 //Are these even used? Check!

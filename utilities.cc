@@ -250,6 +250,30 @@ int calc_hermitian_diff(Mat M,int row_dim,int col_dim)
 
 void normalise(PetscScalar perp_values[],PetscScalar wedge_values[],int N_r,int m_range,int num_eig,bool rotate)
 {
+  
+  PetscScalar max_val_perp,max_val_wedge;
+  for(int jjj=0;jjj<num_eig;jjj++)
+    {
+      max_val_perp=0.0; max_val_wedge=0.0;
+      
+      for(int iii=0;iii<m_range*N_r;iii++)
+	{
+	  if(std::abs(perp_values[jjj*m_range*N_r+iii])>std::abs(max_val_perp)){max_val_perp=perp_values[jjj*m_range*N_r+iii];};
+	  if(std::abs(wedge_values[jjj*m_range*N_r+iii])>std::abs(max_val_wedge)){max_val_wedge=wedge_values[jjj*m_range*N_r+iii];};
+	}
+
+      if( !( std::abs(max_val_perp) == 0.0 ) ){ max_val_perp *= 1.0 / std::abs(max_val_perp) ;}
+      else if( !( std::abs(max_val_wedge) == 0.0 ) ){ max_val_perp = max_val_wedge / std::abs(max_val_wedge) ; }
+      else{ std::cout << "Shouldn't be able to get here (in func normalise) - something has gone terribly wrong!" << std::endl; }
+	    
+      for(int iii=0;iii<m_range*N_r;iii++)
+	{
+	  perp_values[jjj*m_range*N_r+iii] /= max_val_perp;
+	  wedge_values[jjj*m_range*N_r+iii] /= max_val_perp;
+	}
+    }
+      
+  /*
   if(rotate==true)
     {
       PetscScalar max_val_perp,max_val_wedge;
@@ -293,6 +317,7 @@ void normalise(PetscScalar perp_values[],PetscScalar wedge_values[],int N_r,int 
 	    }
 	}
     }
+  */
 }
 
 void sort_eigenvecs(Vec eigenvecs[],PetscScalar xi_perp[],PetscScalar xi_wedge[],geom_shape geom,int num_vecs,int keep_indices[])
