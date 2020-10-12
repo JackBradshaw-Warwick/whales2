@@ -5,58 +5,9 @@ void read_geom(geom_shape *geom)
   //Read from input deck
   std::string value;
 
-  read_in("N_psi",value); //Read value from input.txt
-  if( !(value == "") ) { geom->N_psi = std::stoi( value ) ; } //Convert string
-  else { geom->N_psi = 4 ; } //Default value
-  
-  read_in("N_theta",value);
-  if( !(value == "") ) { geom->N_theta = std::stoi( value ) ; }
-  else { geom->N_theta = 4 ; }
-  
-  read_in("tor_mod",value);
-  if( !(value == "") ) { geom->tor_mod = std::stod( value ) ; }
-  else { geom->tor_mod = 0.0 ; }
-  
-  read_in("m_min",value);
-  if( !(value == "") ) { geom->m_min = std::stoi( value ) ; }
-  else { geom->m_min = 0 ; }
-  
-  read_in("m_max",value);
-  if( !(value == "") ) { geom->m_max = std::stoi( value ) ; }
-  else { geom->m_max = 1 ; }
-  
-  //Calculated here for convenience
-  geom->m_range = geom->m_max - geom->m_min ;
-
-  read_in("num_quad",value);
-  if( !(value == "") ) { geom->num_quad = std::stoi( value ) ; }
-  else { geom->num_quad = 4 ; }
-
-  if(!(geom->num_quad == 4 || geom->num_quad == 6 || geom->num_quad == 12 || geom->num_quad == 18)){
-    std::cout << "That value for num_quad is invalid. Setting num_quad = 4." << std::endl;
-    geom->num_quad = 4 ;
-  }
-
-  read_in("quad_type",value);
-  if( !(value == "") ) { geom->quad_type = value ; }
-  else { geom->quad_type = "gq" ; }
-  
-  read_in("m_coup",value);
-  if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
-  else { geom->m_coup = geom->m_range ; }
-
-  read_in("shape_order",geom->shape_order); //Can read directly in as string
-  if( geom->shape_order == "" ) { geom->shape_order = "NHLC" ; } //Default
-    
-  read_in("deriv_order",geom->deriv_order);
-  if( geom->deriv_order == "" ) { geom->deriv_order = "Quadratic" ; }
-    
-  read_in("interp_order",geom->interp_order);
-  if( geom->interp_order == "" ) { geom->interp_order = "Cubic_pol" ; }
-
   read_in("fill_type",geom->fill_type);
   if( geom->fill_type == "" ) { geom->fill_type = "analytic" ; }
-
+    
   if( geom->fill_type == "analytic" ){  
     read_in("analytical_type",geom->analytical_type);
     if( geom->analytical_type == "" ) { geom->analytical_type = "cylinder_theta" ; }  
@@ -70,143 +21,387 @@ void read_geom(geom_shape *geom)
   }
   else { std::cout << "Fill_type is not recognised as it has been entered" << std::endl; }
 
-  if( geom->analytical_type == "cylinder_theta" || geom->analytical_type == "cylinder_screw" ){ geom->m_coup = 0 ; }
+  if( geom->numerical_type == "whales"){
+    hid_t file_id;
+    herr_t status;
 
-  read_in("dens_form",value);
-  if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
-  else { geom->dens_form = 0 ; }
-
-  read_in("A_dens",value);
-  if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
-  else { geom->A_dens = 1.0 ; }
-
-  assert( geom->A_dens > 0.0 );
-
-  read_in("B_dens",value);
-  if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
-  else { geom->B_dens = 0.0 ; }
-
-  assert( geom->B_dens < 1.0 );
-
-  read_in("mu",value);
-  if( !(value == "") ) { geom->mu = std::stod( value ) ; }
-  else { geom->mu = 0.0 ; }
-
-  assert( geom->mu >= 0.0 );
-
-  read_in("nu",value);
-  if( !(value == "") ) { geom->nu = std::stod( value ) ; }
-  else { geom->nu = 1.0 ; }
-
-  read_in("dens_form",value);
-  if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
-  else { geom->dens_form = 0 ; }
-
-  read_in("A_dens",value);
-  if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
-  else { geom->A_dens = 1.0 ; }
-
-  assert( geom->A_dens > 0.0 );
-
-  read_in("B_dens",value);
-  if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
-  else { geom->B_dens = 0.0 ; }
-
-  assert( geom->B_dens < 1.0 );
-
-  read_in("mu",value);
-  if( !(value == "") ) { geom->mu = std::stod( value ) ; }
-  else { geom->mu = 0.0 ; }
-
-  assert( geom->mu >= 0.0 );
-
-  read_in("nu",value);
-  if( !(value == "") ) { geom->nu = std::stod( value ) ; }
-  else { geom->nu = 1.0 ; }
-
-  read_in("min_rad",value);
-  if( !(value == "") ) { geom->min_rad = std::stod( value ) ; }
-  else { geom->min_rad = 1.0 ; }
-
-  read_in("beta_0",value);
-  if( !(value == "") ) { geom->beta_0 = std::stod( value ) ; }
-  else { geom->beta_0 = 0.0 ; }
-
-  read_in("B_0",value);
-  if( !(value == "") ) { geom->B_0 = std::stod( value ) ; }
-  else { geom->B_0 = 1.0 ; }
-
-  read_in("R_0",value);
-  if( !(value == "") ) { geom->R_0 = std::stod( value ) ; }
-  else { geom->R_0 = 3.0 ; }
-
-  read_in("elong",value);
-  if( !(value == "") ) { geom->elong = std::stod( value ) ; }
-  else { geom->elong = 1.0 ; }
-
-  read_in("triang",value);
-  if( !(value == "") ) { geom->triang = std::stod( value ) ; }
-  else { geom->triang = 0.0 ; }
-
-  read_in("alpha_sol",value);
-  if( !(value == "") ) { geom->alpha_sol = std::stod( value ) ; }
-  else { geom->alpha_sol = 1.0 ; }
-
-  read_in("flux_max",value);
-  if( !(value == "") ) { geom->flux_max = std::stod( value ) ; }
-  else { geom->flux_max = 1.0 ; }
-
-  read_in("output_dir",geom->output_dir);
-  if( geom->output_dir == "" ) { geom->output_dir = "./Results/" ; }
-
-  read_in("results_filename",geom->results_filename);
-  if( geom->results_filename == "" ) { geom->results_filename = "data.h5" ; }
-
-  read_in("write_equil",value);
-  if( !(value == "") ) { geom->write_equil = std::stoi( value ) ; }
-  else { geom->write_equil = 0 ; }
-
-  read_in("equil_filename",geom->equil_filename);
-  if( geom->equil_filename == "" ) { geom->equil_filename = geom->results_filename ; }
-
-  read_in("load_mats",value);
-  if( !(value == "") ) { geom->load_mats = std::stoi( value ) ; }
-  else { geom->load_mats = 0 ; }
-
-  //If loading matrices then need to load whales equilibrium
-  if( geom->load_mats == 1 ){
-    geom->fill_type = "numerical";
-    geom->numerical_type = "whales" ;
-
-    read_in("input_filepath",geom->input_filepath);
-    if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
-  }
-
-  geom->write_mats = 0 ; //Default value
-  if( geom->load_mats == 0  ){ // If mats file exists then no need to write 
-    read_in("write_mats",value);
-    if( !(value == "") ) { geom->write_mats = std::stoi( value ) ; }
-
-    if( geom->write_mats == 1 ){ //If writing mats then need to write whales equil
-      geom->write_equil = 1 ;
-    }   
-  }
-
-  if( geom->load_mats == 1 || geom->write_mats == 1){    
-    read_in("mats_dir",geom->mats_dir);
-    if( geom->mats_dir == "" ) { geom->mats_dir = geom->output_dir ; }
+    std::stringstream filepath;
+    filepath << geom->input_filepath ;
+      
+    //Open HDF5 datafile
+    file_id = H5Fopen(filepath.str().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT); 
   
-    read_in("mats_filename",geom->mats_filename);
-    if( geom->mats_filename == "" ) { geom->mats_filename = "mat" ; }
+    hid_t eqgroup_id;
+    //ints and doubles
+    hid_t N_psi_id, N_theta_id, num_quad_id, m_min_id, m_max_id, m_coup_id, tor_mod_id ,  dens_form_id , A_dens_id , B_dens_id , mu_id , nu_id , min_rad_id , beta_0_id , B_0_id , R_0_id , elong_id , triang_id , alpha_sol_id , solov_A_id , solov_C_id , flux_max_id , shear_on_id , Hall_on_id ; 
+    //strings
+    hid_t quad_type_id , shape_order_id, deriv_order_id, interp_order_id ;
+
+    //Open group
+    eqgroup_id = H5Gopen2(file_id, "/equil", H5P_DEFAULT);
+
+    N_psi_id = H5Aopen( eqgroup_id, "N_psi", H5P_DEFAULT );
+    status = H5Aread( N_psi_id, H5T_NATIVE_INT, &geom->N_psi );
+    status = H5Aclose( N_psi_id );
+  
+    N_theta_id = H5Aopen( eqgroup_id, "N_theta", H5P_DEFAULT );
+    status = H5Aread( N_theta_id, H5T_NATIVE_INT, &geom->N_theta );
+    status = H5Aclose( N_theta_id );
+
+    num_quad_id = H5Aopen( eqgroup_id, "num_quad", H5P_DEFAULT );
+    status = H5Aread( num_quad_id, H5T_NATIVE_INT, &geom->num_quad );
+    status = H5Aclose( num_quad_id );
+
+    m_min_id = H5Aopen( eqgroup_id, "m_min", H5P_DEFAULT );
+    status = H5Aread( m_min_id, H5T_NATIVE_INT, &geom->m_min );
+    status = H5Aclose( m_min_id );
+
+    m_max_id = H5Aopen( eqgroup_id, "m_max", H5P_DEFAULT );
+    status = H5Aread( m_max_id, H5T_NATIVE_INT, &geom->m_max );
+    status = H5Aclose( m_max_id );
+  
+    m_coup_id = H5Aopen( eqgroup_id, "m_coup", H5P_DEFAULT );
+    status = H5Aread( m_coup_id, H5T_NATIVE_INT, &geom->m_coup );
+    status = H5Aclose( m_coup_id );
+  
+    tor_mod_id = H5Aopen( eqgroup_id, "tor_mod", H5P_DEFAULT );
+    status = H5Aread( tor_mod_id, H5T_NATIVE_DOUBLE, &geom->tor_mod );
+    status = H5Aclose( tor_mod_id );
+
+    dens_form_id = H5Aopen( eqgroup_id, "dens_form", H5P_DEFAULT );
+    status = H5Aread( dens_form_id, H5T_NATIVE_INT, &geom->dens_form );
+    status = H5Aclose( dens_form_id );
+
+    A_dens_id = H5Aopen( eqgroup_id, "A_dens", H5P_DEFAULT );
+    status = H5Aread( A_dens_id, H5T_NATIVE_DOUBLE, &geom->A_dens );
+    status = H5Aclose( A_dens_id );
+
+    B_dens_id = H5Aopen( eqgroup_id, "B_dens", H5P_DEFAULT );
+    status = H5Aread( B_dens_id, H5T_NATIVE_DOUBLE, &geom->B_dens );
+    status = H5Aclose( B_dens_id );
+
+    mu_id = H5Aopen( eqgroup_id, "mu", H5P_DEFAULT );
+    status = H5Aread( mu_id, H5T_NATIVE_DOUBLE, &geom->mu );
+    status = H5Aclose( mu_id );
+
+    nu_id = H5Aopen( eqgroup_id, "nu", H5P_DEFAULT );
+    status = H5Aread( nu_id, H5T_NATIVE_DOUBLE, &geom->nu );
+    status = H5Aclose( nu_id );
+
+    min_rad_id = H5Aopen( eqgroup_id, "min_rad", H5P_DEFAULT );
+    status = H5Aread( min_rad_id, H5T_NATIVE_DOUBLE, &geom->min_rad );
+    status = H5Aclose( min_rad_id );
+
+    beta_0_id = H5Aopen( eqgroup_id, "beta_0", H5P_DEFAULT );
+    status = H5Aread( beta_0_id, H5T_NATIVE_DOUBLE, &geom->beta_0 );
+    status = H5Aclose( beta_0_id );
+
+    B_0_id = H5Aopen( eqgroup_id, "B_0", H5P_DEFAULT );
+    status = H5Aread( B_0_id, H5T_NATIVE_DOUBLE, &geom->B_0 );
+    status = H5Aclose( B_0_id );
+
+    R_0_id = H5Aopen( eqgroup_id, "R_0", H5P_DEFAULT );
+    status = H5Aread( R_0_id, H5T_NATIVE_DOUBLE, &geom->R_0 );
+    status = H5Aclose( R_0_id );
+
+    elong_id = H5Aopen( eqgroup_id, "elong", H5P_DEFAULT );
+    status = H5Aread( elong_id, H5T_NATIVE_DOUBLE, &geom->elong );
+    status = H5Aclose( elong_id );
+
+    triang_id = H5Aopen( eqgroup_id, "triang", H5P_DEFAULT );
+    status = H5Aread( triang_id, H5T_NATIVE_DOUBLE, &geom->triang );
+    status = H5Aclose( triang_id );
+
+    alpha_sol_id = H5Aopen( eqgroup_id, "alpha_sol", H5P_DEFAULT );
+    status = H5Aread( alpha_sol_id, H5T_NATIVE_DOUBLE, &geom->alpha_sol );
+    status = H5Aclose( alpha_sol_id );
+
+    solov_A_id = H5Aopen( eqgroup_id, "solov_A", H5P_DEFAULT );
+    status = H5Aread( solov_A_id, H5T_NATIVE_DOUBLE, &geom->solov_A );
+    status = H5Aclose( solov_A_id );
+
+    solov_C_id = H5Aopen( eqgroup_id, "solov_C", H5P_DEFAULT );
+    status = H5Aread( solov_C_id, H5T_NATIVE_DOUBLE, &geom->solov_C );
+    status = H5Aclose( solov_C_id );
+
+    flux_max_id = H5Aopen( eqgroup_id, "flux_max", H5P_DEFAULT );
+    status = H5Aread( flux_max_id, H5T_NATIVE_DOUBLE, &geom->flux_max );
+    status = H5Aclose( flux_max_id );
+  
+    shear_on_id = H5Aopen( eqgroup_id, "shear_on", H5P_DEFAULT );
+    status = H5Aread( shear_on_id, H5T_NATIVE_INT, &geom->shear_on );
+    status = H5Aclose( shear_on_id );
+
+    Hall_on_id = H5Aopen( eqgroup_id, "Hall_on", H5P_DEFAULT );
+    status = H5Aread( Hall_on_id, H5T_NATIVE_INT, &geom->Hall_on );
+    status = H5Aclose( Hall_on_id );
+
+    hid_t string_id ;
+    string_id = H5Tcopy(H5T_C_S1);
+    status = H5Tset_size(string_id, H5T_VARIABLE);
+
+    char* temp;
+    
+    quad_type_id = H5Aopen( eqgroup_id, "quad_type", H5P_DEFAULT );
+    status = H5Aread( quad_type_id, string_id , &temp );
+    status = H5Aclose( quad_type_id );
+    geom->quad_type = temp ; 
+  
+    shape_order_id = H5Aopen( eqgroup_id, "shape_order", H5P_DEFAULT );
+    status = H5Aread( shape_order_id, string_id , &temp );
+    status = H5Aclose( shape_order_id );
+    geom->shape_order = temp ;
+  
+    deriv_order_id = H5Aopen( eqgroup_id, "deriv_order", H5P_DEFAULT );
+    status = H5Aread( deriv_order_id, string_id, &temp );
+    status = H5Aclose( deriv_order_id );
+    geom->deriv_order = temp ;
+  
+    interp_order_id = H5Aopen( eqgroup_id, "interp_order", H5P_DEFAULT );
+    status = H5Aread( interp_order_id, string_id, &temp );
+    status = H5Aclose( interp_order_id );
+    geom->interp_order = temp ;
+
+    status = H5free_memory(temp);
+    status = H5Tclose(string_id);
+
+    status = H5Gclose(eqgroup_id);
+
+    status = H5Fclose(file_id);
+
+    read_in("output_dir",geom->output_dir);
+    if( geom->output_dir == "" ) { geom->output_dir = "./Results/" ; }
+
+    read_in("results_filename",geom->results_filename);
+    if( geom->results_filename == "" ) { geom->results_filename = "data.h5" ; }
+
+    read_in("write_equil",value);
+    if( !(value == "") ) { geom->write_equil = std::stoi( value ) ; }
+    else { geom->write_equil = 0 ; }
+
+    read_in("equil_filename",geom->equil_filename);
+    if( geom->equil_filename == "" ) { geom->equil_filename = geom->results_filename ; }
+
+    read_in("load_mats",value);
+    if( !(value == "") ) { geom->load_mats = std::stoi( value ) ; }
+    else { geom->load_mats = 0 ; }
+
+    //If loading matrices then need to load whales equilibrium
+    if( geom->load_mats == 1 ){
+      geom->fill_type = "numerical";
+      geom->numerical_type = "whales" ;
+
+      read_in("input_filepath",geom->input_filepath);
+      if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
+    }
+
+    geom->write_mats = 0 ; //Default value
+    if( geom->load_mats == 0  ){ // If mats file exists then no need to write 
+      read_in("write_mats",value);
+      if( !(value == "") ) { geom->write_mats = std::stoi( value ) ; }
+
+      if( geom->write_mats == 1 ){ //If writing mats then need to write whales equil
+	geom->write_equil = 1 ;
+      }   
+    }
+
+    if( geom->load_mats == 1 || geom->write_mats == 1){    
+      read_in("mats_dir",geom->mats_dir);
+      if( geom->mats_dir == "" ) { geom->mats_dir = geom->output_dir ; }
+  
+      read_in("mats_filename",geom->mats_filename);
+      if( geom->mats_filename == "" ) { geom->mats_filename = "mat" ; }
+    }
   }
+  else{ //If not loading equilibrium from file, read from input.txt
+    
+    read_in("N_psi",value);
+    if( !(value == "") ) { geom->N_psi = std::stoi( value ) ; }
+    else { geom->N_psi = 4 ; }
+  
+    read_in("N_theta",value);
+    if( !(value == "") ) { geom->N_theta = std::stoi( value ) ; }
+    else { geom->N_theta = 4 ; }
+  
+    read_in("tor_mod",value);
+    if( !(value == "") ) { geom->tor_mod = std::stod( value ) ; }
+    else { geom->tor_mod = 0.0 ; }
+  
+    read_in("m_min",value);
+    if( !(value == "") ) { geom->m_min = std::stoi( value ) ; }
+    else { geom->m_min = 0 ; }
+  
+    read_in("m_max",value);
+    if( !(value == "") ) { geom->m_max = std::stoi( value ) ; }
+    else { geom->m_max = 1 ; }
+  
+    //Calculated here for convenience
+    geom->m_range = geom->m_max - geom->m_min ;
 
-  read_in("shear_on",value);
-  if( !(value == "") ) { geom->shear_on = std::stoi( value ) ; }
-  else { geom->shear_on = 1 ; }
+    read_in("num_quad",value);
+    if( !(value == "") ) { geom->num_quad = std::stoi( value ) ; }
+    else { geom->num_quad = 4 ; }
 
-  read_in("Hall_on",value);
-  if( !(value == "") ) { geom->Hall_on = std::stoi( value ) ; }
-  else { geom->Hall_on = 1 ; }
+    if(!(geom->num_quad == 4 || geom->num_quad == 6 || geom->num_quad == 12 || geom->num_quad == 18)){
+      std::cout << "That value for num_quad is invalid. Setting num_quad = 4." << std::endl;
+      geom->num_quad = 4 ;
+    }
+
+    read_in("quad_type",value);
+    if( !(value == "") ) { geom->quad_type = value ; }
+    else { geom->quad_type = "gq" ; }
+  
+    read_in("m_coup",value);
+    if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
+    else { geom->m_coup = geom->m_range ; }
+
+    read_in("shape_order",geom->shape_order); //Can read directly in as string
+    if( geom->shape_order == "" ) { geom->shape_order = "NHLC" ; } //Default
+    
+    read_in("deriv_order",geom->deriv_order);
+    if( geom->deriv_order == "" ) { geom->deriv_order = "Quadratic" ; }
+    
+    read_in("interp_order",geom->interp_order);
+    if( geom->interp_order == "" ) { geom->interp_order = "Cubic_pol" ; }
+
+    if( geom->analytical_type == "cylinder_theta" || geom->analytical_type == "cylinder_screw" ){ geom->m_coup = 0 ; }
+
+    read_in("dens_form",value);
+    if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
+    else { geom->dens_form = 0 ; }
+
+    read_in("A_dens",value);
+    if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
+    else { geom->A_dens = 1.0 ; }
+
+    assert( geom->A_dens > 0.0 );
+
+    read_in("B_dens",value);
+    if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
+    else { geom->B_dens = 0.0 ; }
+
+    assert( geom->B_dens < 1.0 );
+
+    read_in("mu",value);
+    if( !(value == "") ) { geom->mu = std::stod( value ) ; }
+    else { geom->mu = 0.0 ; }
+
+    assert( geom->mu >= 0.0 );
+
+    read_in("nu",value);
+    if( !(value == "") ) { geom->nu = std::stod( value ) ; }
+    else { geom->nu = 1.0 ; }
+
+    read_in("dens_form",value);
+    if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
+    else { geom->dens_form = 0 ; }
+
+    read_in("A_dens",value);
+    if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
+    else { geom->A_dens = 1.0 ; }
+
+    assert( geom->A_dens > 0.0 );
+
+    read_in("B_dens",value);
+    if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
+    else { geom->B_dens = 0.0 ; }
+
+    assert( geom->B_dens < 1.0 );
+
+    read_in("mu",value);
+    if( !(value == "") ) { geom->mu = std::stod( value ) ; }
+    else { geom->mu = 0.0 ; }
+
+    assert( geom->mu >= 0.0 );
+
+    read_in("nu",value);
+    if( !(value == "") ) { geom->nu = std::stod( value ) ; }
+    else { geom->nu = 1.0 ; }
+
+    read_in("min_rad",value);
+    if( !(value == "") ) { geom->min_rad = std::stod( value ) ; }
+    else { geom->min_rad = 1.0 ; }
+
+    read_in("beta_0",value);
+    if( !(value == "") ) { geom->beta_0 = std::stod( value ) ; }
+    else { geom->beta_0 = 0.0 ; }
+
+    read_in("B_0",value);
+    if( !(value == "") ) { geom->B_0 = std::stod( value ) ; }
+    else { geom->B_0 = 1.0 ; }
+
+    read_in("R_0",value);
+    if( !(value == "") ) { geom->R_0 = std::stod( value ) ; }
+    else { geom->R_0 = 3.0 ; }
+
+    read_in("elong",value);
+    if( !(value == "") ) { geom->elong = std::stod( value ) ; }
+    else { geom->elong = 1.0 ; }
+
+    read_in("triang",value);
+    if( !(value == "") ) { geom->triang = std::stod( value ) ; }
+    else { geom->triang = 0.0 ; }
+
+    read_in("alpha_sol",value);
+    if( !(value == "") ) { geom->alpha_sol = std::stod( value ) ; }
+    else { geom->alpha_sol = 1.0 ; }
+
+    read_in("flux_max",value);
+    if( !(value == "") ) { geom->flux_max = std::stod( value ) ; }
+    else { geom->flux_max = 1.0 ; }
+
+    read_in("output_dir",geom->output_dir);
+    if( geom->output_dir == "" ) { geom->output_dir = "./Results/" ; }
+
+    read_in("results_filename",geom->results_filename);
+    if( geom->results_filename == "" ) { geom->results_filename = "data.h5" ; }
+
+    read_in("write_equil",value);
+    if( !(value == "") ) { geom->write_equil = std::stoi( value ) ; }
+    else { geom->write_equil = 0 ; }
+
+    read_in("equil_filename",geom->equil_filename);
+    if( geom->equil_filename == "" ) { geom->equil_filename = geom->results_filename ; }
+
+    read_in("load_mats",value);
+    if( !(value == "") ) { geom->load_mats = std::stoi( value ) ; }
+    else { geom->load_mats = 0 ; }
+
+    //If loading matrices then need to load whales equilibrium
+    if( geom->load_mats == 1 ){
+      geom->fill_type = "numerical";
+      geom->numerical_type = "whales" ;
+
+      read_in("input_filepath",geom->input_filepath);
+      if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
+    }
+
+    geom->write_mats = 0 ; //Default value
+    if( geom->load_mats == 0  ){ // If mats file exists then no need to write 
+      read_in("write_mats",value);
+      if( !(value == "") ) { geom->write_mats = std::stoi( value ) ; }
+
+      if( geom->write_mats == 1 ){ //If writing mats then need to write whales equil
+	geom->write_equil = 1 ;
+      }   
+    }
+
+    if( geom->load_mats == 1 || geom->write_mats == 1){    
+      read_in("mats_dir",geom->mats_dir);
+      if( geom->mats_dir == "" ) { geom->mats_dir = geom->output_dir ; }
+  
+      read_in("mats_filename",geom->mats_filename);
+      if( geom->mats_filename == "" ) { geom->mats_filename = "mat" ; }
+    }
+
+    read_in("shear_on",value);
+    if( !(value == "") ) { geom->shear_on = std::stoi( value ) ; }
+    else { geom->shear_on = 1 ; }
+
+    read_in("Hall_on",value);
+    if( !(value == "") ) { geom->Hall_on = std::stoi( value ) ; }
+    else { geom->Hall_on = 1 ; }
+  }
 }
 
 void calc_geom(geom_shape *geom)
@@ -263,7 +458,6 @@ void build_equil(equil_fields *equil,geom_shape *geom)
 
   //Theta is some angle, periodic in 2*pi. Grid is equally spaced in theta but not necessarily poloidal arclength
   for(int iii=0 ; iii < geom->N_theta ; iii++){ equil->theta_grid[iii] = iii * 2.0 * pi / geom->N_theta ;} 
-
   
   if( geom->fill_type == "analytic" ){
     
@@ -529,6 +723,6 @@ void fill_rad(equil_fields *equil,geom_shape geom, double flux_max, double flux_
   //Gaussian quadrature spacing 
   for(int iii=0 ; iii < N_psi - 1 ; iii++){
     for(int jjj=0 ; jjj < geom.num_quad ; jjj++){
-	equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gqNeval[jjj] )    ;
+      equil->rad_interp[ iii * (geom.num_quad + 1) + jjj + 1 ] = 0.5 * ( equil->rad_var[iii+1] + equil->rad_var[iii] + ( equil->rad_var[iii+1] - equil->rad_var[iii] ) * gqNeval[jjj] )    ;
     }}
 }

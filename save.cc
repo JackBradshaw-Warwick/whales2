@@ -252,7 +252,12 @@ int save_equil_part(geom_shape geom,equil_fields equil)
 
   /*****************************************************************************************************************************************************************************************/
 
-  hid_t eqgroup_id, eqspace_id, N_psi_id, N_theta_id, num_quad_id, m_min_id, m_max_id, m_coup_id, tor_mod_id, shape_order_id, deriv_order_id, interp_order_id;
+  //space IDs
+  hid_t eqgroup_id, eqspace_id ;
+  //ints and doubles
+  hid_t N_psi_id, N_theta_id, num_quad_id, m_min_id, m_max_id, m_coup_id, tor_mod_id ,  dens_form_id , A_dens_id , B_dens_id , mu_id , nu_id , min_rad_id , beta_0_id , B_0_id , R_0_id , elong_id , triang_id , alpha_sol_id , solov_A_id , solov_C_id , flux_max_id , shear_on_id , Hall_on_id ; 
+  //strings
+  hid_t quad_type_id , shape_order_id, deriv_order_id, interp_order_id , fill_type_id , analytical_type_id, numerical_type_id ; 
   hsize_t eq_dims[1]={1};
   
   //Create group for data input
@@ -290,15 +295,86 @@ int save_equil_part(geom_shape geom,equil_fields equil)
   status = H5Awrite( tor_mod_id, H5T_NATIVE_DOUBLE, &geom.tor_mod);
   status = H5Aclose( tor_mod_id);
 
+  dens_form_id = H5Acreate2 (eqgroup_id,"dens_form",H5T_NATIVE_INT, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( dens_form_id, H5T_NATIVE_INT, &geom.dens_form);
+  status = H5Aclose( dens_form_id);
+
+  A_dens_id = H5Acreate2 (eqgroup_id,"A_dens",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( A_dens_id, H5T_NATIVE_DOUBLE, &geom.A_dens);
+  status = H5Aclose( A_dens_id);
+
+  B_dens_id = H5Acreate2 (eqgroup_id,"B_dens",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( B_dens_id, H5T_NATIVE_DOUBLE, &geom.B_dens);
+  status = H5Aclose( B_dens_id);
+
+  mu_id = H5Acreate2 (eqgroup_id,"mu",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( mu_id, H5T_NATIVE_DOUBLE, &geom.mu);
+  status = H5Aclose( mu_id);
+
+  nu_id = H5Acreate2 (eqgroup_id,"nu",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( nu_id, H5T_NATIVE_DOUBLE, &geom.nu);
+  status = H5Aclose( nu_id);
+
+  min_rad_id = H5Acreate2 (eqgroup_id,"min_rad",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( min_rad_id, H5T_NATIVE_DOUBLE, &geom.min_rad);
+  status = H5Aclose( min_rad_id);
+
+  beta_0_id = H5Acreate2 (eqgroup_id,"beta_0",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( beta_0_id, H5T_NATIVE_DOUBLE, &geom.beta_0);
+  status = H5Aclose( beta_0_id);
+
+  B_0_id = H5Acreate2 (eqgroup_id,"B_0",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( B_0_id, H5T_NATIVE_DOUBLE, &geom.B_0);
+  status = H5Aclose( B_0_id);
+
+  R_0_id = H5Acreate2 (eqgroup_id,"R_0",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( R_0_id, H5T_NATIVE_DOUBLE, &geom.R_0);
+  status = H5Aclose( R_0_id);
+
+  elong_id = H5Acreate2 (eqgroup_id,"elong",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( elong_id, H5T_NATIVE_DOUBLE, &geom.elong);
+  status = H5Aclose( elong_id);
+
+  triang_id = H5Acreate2 (eqgroup_id,"triang",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( triang_id, H5T_NATIVE_DOUBLE, &geom.triang);
+  status = H5Aclose( triang_id);
+
+  alpha_sol_id = H5Acreate2 (eqgroup_id,"alpha_sol",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( alpha_sol_id, H5T_NATIVE_DOUBLE, &geom.alpha_sol);
+  status = H5Aclose( alpha_sol_id);
+
+  solov_A_id = H5Acreate2 (eqgroup_id,"solov_A",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( solov_A_id, H5T_NATIVE_DOUBLE, &geom.solov_A);
+  status = H5Aclose( solov_A_id);
+
+  solov_C_id = H5Acreate2 (eqgroup_id,"solov_C",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( solov_C_id, H5T_NATIVE_DOUBLE, &geom.solov_C);
+  status = H5Aclose( solov_C_id);
+
+  flux_max_id = H5Acreate2 (eqgroup_id,"flux_max",H5T_NATIVE_DOUBLE, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( flux_max_id, H5T_NATIVE_DOUBLE, &geom.flux_max);
+  status = H5Aclose( flux_max_id);
+
+  shear_on_id = H5Acreate2 (eqgroup_id,"shear_on",H5T_NATIVE_INT, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( shear_on_id, H5T_NATIVE_INT, &geom.shear_on);
+  status = H5Aclose( shear_on_id);
+
+  Hall_on_id = H5Acreate2 (eqgroup_id,"Hall_on",H5T_NATIVE_INT, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( Hall_on_id, H5T_NATIVE_INT, &geom.Hall_on);
+  status = H5Aclose( Hall_on_id);
+
   hid_t string_id ;
   string_id = H5Tcopy(H5T_C_S1);
   status = H5Tset_size(string_id, H5T_VARIABLE);
 
+  quad_type_id = H5Acreate2 (eqgroup_id,"quad_type", string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( quad_type_id, string_id, &geom.quad_type );
+  status = H5Aclose( quad_type_id);
+  
   shape_order_id = H5Acreate2 (eqgroup_id,"shape_order", string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Awrite( shape_order_id, string_id, &geom.shape_order );
   status = H5Aclose( shape_order_id);
 
-  
   deriv_order_id = H5Acreate2 (eqgroup_id,"deriv_order",string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Awrite( deriv_order_id, string_id, &geom.deriv_order);
   status = H5Aclose( deriv_order_id);
@@ -306,6 +382,18 @@ int save_equil_part(geom_shape geom,equil_fields equil)
   interp_order_id = H5Acreate2 (eqgroup_id,"interp_order",string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Awrite( interp_order_id, string_id, &geom.interp_order);
   status = H5Aclose( interp_order_id);
+
+  fill_type_id = H5Acreate2 (eqgroup_id,"fill_type",string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( fill_type_id, string_id, &geom.fill_type);
+  status = H5Aclose( fill_type_id);
+
+  analytical_type_id = H5Acreate2 (eqgroup_id,"analytical_type",string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( analytical_type_id, string_id, &geom.analytical_type);
+  status = H5Aclose( analytical_type_id);
+
+  numerical_type_id = H5Acreate2 (eqgroup_id,"numerical_type",string_id, eqspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite( numerical_type_id, string_id, &geom.numerical_type);
+  status = H5Aclose( numerical_type_id);
 
   status = H5Tclose(string_id);
 

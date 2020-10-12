@@ -35,6 +35,8 @@ struct geom_shape
   double triang;
   double alpha_sol;
   double flux_max;
+  double solov_A;
+  double solov_C;
 
   int dens_form;
   double A_dens;

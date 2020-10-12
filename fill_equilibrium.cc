@@ -147,61 +147,12 @@ int fill_whales(equil_fields *equil,geom_shape *geom)
   filepath << geom->input_filepath ;
       
   //Open HDF5 datafile
-  file_id = H5Fopen(filepath.str().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  file_id = H5Fopen(filepath.str().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT); 
   
-  hid_t eqgroup_id, N_psi_id, N_theta_id, num_quad_id, m_min_id, m_max_id, m_coup_id, tor_mod_id, shape_order_id, deriv_order_id, interp_order_id;
+  hid_t eqgroup_id;
   
   //Open group
   eqgroup_id = H5Gopen2(file_id, "/equil", H5P_DEFAULT);
-
-  N_psi_id = H5Aopen( eqgroup_id, "N_psi", H5P_DEFAULT );
-  status = H5Aread( N_psi_id, H5T_NATIVE_INT, &geom->N_psi );
-  status = H5Aclose( N_psi_id );
-  
-  N_theta_id = H5Aopen( eqgroup_id, "N_theta", H5P_DEFAULT );
-  status = H5Aread( N_theta_id, H5T_NATIVE_INT, &geom->N_theta );
-  status = H5Aclose( N_theta_id );
-
-  num_quad_id = H5Aopen( eqgroup_id, "num_quad", H5P_DEFAULT );
-  status = H5Aread( num_quad_id, H5T_NATIVE_INT, &geom->num_quad );
-  status = H5Aclose( num_quad_id );
-
-  m_min_id = H5Aopen( eqgroup_id, "m_min", H5P_DEFAULT );
-  status = H5Aread( m_min_id, H5T_NATIVE_INT, &geom->m_min );
-  status = H5Aclose( m_min_id );
-
-  m_max_id = H5Aopen( eqgroup_id, "m_max", H5P_DEFAULT );
-  status = H5Aread( m_max_id, H5T_NATIVE_INT, &geom->m_max );
-  status = H5Aclose( m_max_id );
-  
-  m_coup_id = H5Aopen( eqgroup_id, "m_coup", H5P_DEFAULT );
-  status = H5Aread( m_coup_id, H5T_NATIVE_INT, &geom->m_coup );
-  status = H5Aclose( m_coup_id );
-  
-  tor_mod_id = H5Aopen( eqgroup_id, "tor_mod", H5P_DEFAULT );
-  status = H5Aread( tor_mod_id, H5T_NATIVE_DOUBLE, &geom->tor_mod );
-  status = H5Aclose( tor_mod_id );
-
-  hid_t string_id ;
-  string_id = H5Tcopy(H5T_C_S1);
-  status = H5Tset_size(string_id, H5T_VARIABLE);
-  
-  shape_order_id = H5Aopen( eqgroup_id, "shape_order", H5P_DEFAULT );
-  status = H5Aread( shape_order_id, string_id , &geom->shape_order );
-  status = H5Aclose( shape_order_id );
-  
-  deriv_order_id = H5Aopen( eqgroup_id, "deriv_order", H5P_DEFAULT );
-  status = H5Aread( deriv_order_id, string_id, &geom->deriv_order );
-  status = H5Aclose( deriv_order_id );
-  
-  interp_order_id = H5Aopen( eqgroup_id, "interp_order", H5P_DEFAULT );
-  status = H5Aread( interp_order_id, string_id, &geom->interp_order );
-  status = H5Aclose( interp_order_id );
-
-  status = H5Tclose(string_id);
-
-  //RECALCULATE GEOM VALUES
-  calc_geom(geom);
 
   //Read in equil
   hid_t f_psi_id, dens_id, pres_id, g_pp_id, g_pt_id, g_tt_id, g_phph_id, jacob_id, mag_sq_id, j_dot_b_id, curv_psi_id, neg_shear_id;

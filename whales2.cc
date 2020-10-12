@@ -27,17 +27,16 @@ int main(int argc,char* argv[])
 
   ierr = SlepcInitialize(&argc,&argv,(char*)0,(char*)0); if ( ierr ){ return ierr; }
   MPI_Comm_rank(PETSC_COMM_WORLD,&my_rank);
-  
+
   build_geom(&geom);
 
   build_equil(&equil,&geom);
 
-  if(my_rank==0)
-    {
+  if(my_rank==0){
       if ( geom.write_equil == 1 ){ save_equil_full(geom,equil); }
       else { save_equil_part(geom,equil); }
     }
-  
+
   /***************************************************************************************************************************************************************************************/
   /***************************************************************************************************************************************************************************************/
  
@@ -120,8 +119,7 @@ int main(int argc,char* argv[])
 
   clock_t time1;
   if( my_rank == 0 ){ time1 = clock() ;}
-
-
+  
   if( geom.Hall_on == 1 ){
     ierr = MatScale(mats[0],-1.0);CHKERRQ(ierr);
 
@@ -158,8 +156,7 @@ int main(int argc,char* argv[])
   //Move all output data to root process
   Vec *eigenvec_tmp = new Vec[nconv];
   Vec *eigenvec = new Vec[nconv];
-  PetscScalar *eigenval = new PetscScalar[nconv]; 
-
+  PetscScalar *eigenval = new PetscScalar[nconv];
 
   for(PetscInt iii=0;iii<nconv;iii++)
     {
