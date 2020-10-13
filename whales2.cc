@@ -33,9 +33,9 @@ int main(int argc,char* argv[])
   build_equil(&equil,&geom);
 
   if(my_rank==0){
-      if ( geom.write_equil == 1 ){ save_equil_full(geom,equil); }
-      else { save_equil_part(geom,equil); }
-    }
+    if ( geom.write_equil == 1 ){ save_equil_full(geom,equil); }
+    else { save_equil_part(geom,equil); }
+  }
 
   /***************************************************************************************************************************************************************************************/
   /***************************************************************************************************************************************************************************************/
@@ -91,30 +91,30 @@ int main(int argc,char* argv[])
       //delete_full_matrix_coeffs(&coeffs);
 
       /*
-      make_hermitian(&E,dim);
-      if(geom.Hall_on == 1){
+	make_hermitian(&E,dim);
+	if(geom.Hall_on == 1){
 	make_hermitian(&H,dim);
-      }
-      make_hermitian(&F,dim);
+	}
+	make_hermitian(&F,dim);
       */
 
       /*
-      calc_hermitian_diff(E,dim,dim);
-      if(geom.Hall_on == 1){
+	calc_hermitian_diff(E,dim,dim);
+	if(geom.Hall_on == 1){
 	calc_hermitian_diff(H,dim,dim);
-      }
-      calc_hermitian_diff(F,dim,dim);
+	}
+	calc_hermitian_diff(F,dim,dim);
       */
 
       if(!(geom.write_mats==0)){ save_mats( geom , mats ); }
     }
 
   /*
-  ierr = MatView(E,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  if(geom.Hall_on == 1){
+    ierr = MatView(E,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    if(geom.Hall_on == 1){
     ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  }
-  ierr = MatView(F,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    }
+    ierr = MatView(F,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   */
 
   clock_t time1;
@@ -222,7 +222,7 @@ int main(int argc,char* argv[])
   
   /************************************************************************************************************************************************************************************/
   /************************************************************************************************************************************************************************************/
-  //Calculate which solutions should be kept based on their mode numbers
+  //Calculate which solutions should be kept based on their mode numbers. Only master thread participates in post-processing
   
   if(!(my_rank==0))
     {
@@ -289,72 +289,6 @@ int main(int argc,char* argv[])
 
       /************************************************************************************************************************************************************************************/
 
-      PetscScalar *xi_j = new PetscScalar[nconv_mod*geom.N_psi*geom.m_range];
-      PetscScalar *xi_full = new PetscScalar[nconv_mod*geom.N_psi*geom.N_theta];
-
-      PetscScalar *nu_j = new PetscScalar[nconv_mod*geom.N_psi*geom.m_range];
-      PetscScalar *nu_full = new PetscScalar[nconv_mod*geom.N_psi*geom.N_theta];
-
-      double *normalise_perp = new double[geom.N_psi*geom.N_theta];
-      double *normalise_wedge = new double[geom.N_psi*geom.N_theta];
-
-      for(int iii=0;iii<geom.N_psi;iii++){
-	for(int jjj=0;jjj<geom.N_theta;jjj++){
-	  normalise_perp[iii*geom.N_theta+jjj]=1.0; //equil.jacob[iii*geom.N_theta+jjj];
-	  normalise_wedge[iii*geom.N_theta+jjj]=1.0; //sqrt(equil.g_pp[iii*geom.N_theta+jjj]/equil.mag_sq[iii*geom.N_theta+jjj]);
-	}}
-
-      sort_eigenvecs(eigenvec,xi_j,nu_j,geom,nconv_mod,keep_indices);
-
-      for(int iii=0;iii<nconv;iii++){ierr=VecDestroy(&eigenvec[iii]);CHKERRQ(ierr);}
-      delete[] eigenvec;
-
-      normalise(xi_j,nu_j,geom.N_psi,geom.m_range,nconv_mod,true);
-
-      
-      for(int iii=0;iii<nconv_mod*geom.N_psi*geom.N_theta;iii++){xi_full[iii]=0.0;nu_full[iii]=0.0;}
-      
-      for(int iii=0;iii<nconv_mod;iii++){
-	for(int jjj=0;jjj<geom.N_psi;jjj++){
-	  for(int m_count=0;m_count<geom.m_range;m_count++){
-	    for(int kkk=0;kkk<geom.N_theta;kkk++)
-	      {
-		xi_full[iii*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk]+=xi_j[iii*(geom.N_psi)*(geom.m_range)+m_count*(geom.N_psi)+jjj]*(cos((geom.m_min+m_count)*equil.theta_grid[kkk])+PETSC_i*sin((geom.m_min+m_count)*equil.theta_grid[kkk]));
-		nu_full[iii*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk]+=nu_j[iii*(geom.N_psi)*(geom.m_range)+m_count*(geom.N_psi)+jjj]*(cos((geom.m_min+m_count)*equil.theta_grid[kkk])+PETSC_i*sin((geom.m_min+m_count)*equil.theta_grid[kkk]));
-	      }
-	  }
-
-	  for(int kkk=0;kkk<geom.N_theta;kkk++)
-	    {
-	      xi_full[iii*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk]/=normalise_perp[jjj*geom.N_theta+kkk];
-	      nu_full[iii*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk]/=normalise_wedge[jjj*geom.N_theta+kkk];
-	    }
-	}
-      }
-
-      delete[] normalise_perp; delete[] normalise_wedge;
-
-      PetscScalar *b_par = new PetscScalar[nconv_mod*geom.N_psi*geom.N_theta];
-      PetscScalar *b_perp = new PetscScalar[nconv_mod*geom.N_psi*geom.N_theta];
-      PetscScalar *b_wedge = new PetscScalar[nconv_mod*geom.N_psi*geom.N_theta];
-
-      convert_to_mag(b_par,b_perp,b_wedge,xi_full,nu_full,equil,geom,nconv_mod,geom.shape_order);
-
-
-      /*for(int jjj=0;jjj<geom.N_psi;jjj++){
-	for(int kkk=0;kkk<geom.N_theta;kkk++)
-	{
-	if(!(geom.ind_perp_main[0][jjj]==-1)){xi_full[jjj*geom.N_theta+kkk]=cos(tans[geom.ind_perp_main[0][jjj]])*xi_full[jjj*geom.N_theta+kkk]+sin(tans[geom.ind_perp_main[0][jjj]])*xi_full[2*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk];}
-	if(!(geom.ind_wedge_main[0][jjj]==-1)){nu_full[jjj*geom.N_theta+kkk]=cos(tans[geom.ind_wedge_main[0][jjj]])*nu_full[jjj*geom.N_theta+kkk]+sin(tans[geom.ind_wedge_main[0][jjj]])*nu_full[2*geom.N_psi*geom.N_theta+jjj*geom.N_theta+kkk];}
-	}
-	}*/
-
-
-     
-    
-      /***************************************************************************************************************************************************************************************/
-      /***************************************************************************************************************************************************************************************/
-
       hid_t file_id;
       herr_t status;
 
@@ -369,8 +303,6 @@ int main(int argc,char* argv[])
 	//Create HDF5 datafile
 	file_id = H5Fcreate(FILE.str().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
       }
-      /***************************************************************************************************************************************************************************************/
-
       
       hid_t datagroup_id;
       
@@ -411,75 +343,39 @@ int main(int argc,char* argv[])
       //EIGENVECTOR (INTERPOLATED) DATA
       hid_t dataspace_id,xidata_id_r,nudata_id_r,xidata_id_i,nudata_id_i,b_par_id_r,b_par_id_i,b_perp_id_r,b_perp_id_i,b_wedge_id_r,b_wedge_id_i;
       hsize_t data_dims[3]={nconv_mod,geom.N_psi,geom.N_theta};
-      double *data_in = new double[data_dims[0]*data_dims[1]*data_dims[2]]; //Create data array for data input
       
       //Create the data space for the dataset.
       dataspace_id = H5Screate_simple(3,data_dims,NULL);
-	  
-      //Create and write the displacement data.
+
       xidata_id_r = H5Dcreate2(datagroup_id, "xi_r", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++)
-	{data_in[iii]=PetscRealPart(xi_full[iii]);}
-      status = H5Dwrite (xidata_id_r, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(xidata_id_r);
 
       xidata_id_i = H5Dcreate2(datagroup_id, "xi_i", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++)
-	{data_in[iii]=PetscImaginaryPart(xi_full[iii]);}
-      status = H5Dwrite (xidata_id_i, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(xidata_id_i);
 
       nudata_id_r = H5Dcreate2(datagroup_id, "nu_r", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++)
-	{data_in[iii]=PetscRealPart(nu_full[iii]);}
-      status = H5Dwrite (nudata_id_r, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(nudata_id_r);
 
       nudata_id_i = H5Dcreate2(datagroup_id, "nu_i", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++)
-	{data_in[iii]=PetscImaginaryPart(nu_full[iii]);}
-      status = H5Dwrite (nudata_id_i, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(nudata_id_i);
 
       b_par_id_r = H5Dcreate2(datagroup_id, "b_par_r", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscRealPart(b_par[iii]);}
-      status = H5Dwrite (b_par_id_r, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_par_id_r);
 
       b_par_id_i = H5Dcreate2(datagroup_id, "b_par_i", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscImaginaryPart(b_par[iii]);}
-      status = H5Dwrite (b_par_id_i, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_par_id_i);
 
       b_perp_id_r = H5Dcreate2(datagroup_id, "b_perp_r", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscRealPart(b_perp[iii]);}
-      status = H5Dwrite (b_perp_id_r, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_perp_id_r);
 
       b_perp_id_i = H5Dcreate2(datagroup_id, "b_perp_i", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscImaginaryPart(b_perp[iii]);}
-      status = H5Dwrite (b_perp_id_i, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_perp_id_i);
 
       b_wedge_id_r = H5Dcreate2(datagroup_id, "b_wedge_r", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscRealPart(b_wedge[iii]);}
-      status = H5Dwrite (b_wedge_id_r, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_wedge_id_r);
 
       b_wedge_id_i = H5Dcreate2(datagroup_id, "b_wedge_i", H5T_NATIVE_DOUBLE, dataspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<data_dims[0]*data_dims[1]*data_dims[2];iii++){data_in[iii]=PetscImaginaryPart(b_wedge[iii]);}
-      status = H5Dwrite (b_wedge_id_i, H5T_NATIVE_DOUBLE, dataspace_id, dataspace_id, H5P_DEFAULT, data_in);
       status = H5Dclose(b_wedge_id_i);
-
-
-      status = H5Sclose(dataspace_id);
-      delete[] data_in;
-      delete[] xi_full;
-      delete[] nu_full;
-
-      delete[] b_par;
-      delete[] b_perp;
-      delete[] b_wedge;
 
       //MODE DATA
       hid_t modspace_id,mod_id;
@@ -497,45 +393,26 @@ int main(int argc,char* argv[])
 
       status = H5Sclose(modspace_id);
       delete[] mod_in;
-
+      
       //SEPERATE POLOIDAL MODE DATA
       hid_t polspace_id,xipol_id_r,nupol_id_r,xipol_id_i,nupol_id_i;
       hsize_t pol_dims[3]={nconv_mod,geom.m_range,geom.N_psi};
-      double *pol_in = new double[pol_dims[0]*pol_dims[1]*pol_dims[2]]; //Create data array for data input
 
       //Create the data space for the dataset.
       polspace_id = H5Screate_simple(3,pol_dims,NULL);
 
-      //Create and write the displacement data.
       xipol_id_r = H5Dcreate2(datagroup_id, "xi_r_polmodes", H5T_NATIVE_DOUBLE, polspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<pol_dims[0]*pol_dims[1]*pol_dims[2];iii++)
-	{pol_in[iii]=PetscRealPart(xi_j[iii]);}
-      status = H5Dwrite (xipol_id_r, H5T_NATIVE_DOUBLE, polspace_id, polspace_id, H5P_DEFAULT, pol_in);
       status = H5Dclose(xipol_id_r);
-
+      
       xipol_id_i = H5Dcreate2(datagroup_id, "xi_i_polmodes", H5T_NATIVE_DOUBLE, polspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<pol_dims[0]*pol_dims[1]*pol_dims[2];iii++)
-	{pol_in[iii]=PetscImaginaryPart(xi_j[iii]);}
-      status = H5Dwrite (xipol_id_i, H5T_NATIVE_DOUBLE, polspace_id, polspace_id, H5P_DEFAULT, pol_in);
       status = H5Dclose(xipol_id_i);
-
+      
       nupol_id_r = H5Dcreate2(datagroup_id, "nu_r_polmodes", H5T_NATIVE_DOUBLE, polspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<pol_dims[0]*pol_dims[1]*pol_dims[2];iii++)
-	{pol_in[iii]=PetscRealPart(nu_j[iii]);}
-      status = H5Dwrite (nupol_id_r, H5T_NATIVE_DOUBLE, polspace_id, polspace_id, H5P_DEFAULT, pol_in);
       status = H5Dclose(nupol_id_r);
-
+      
       nupol_id_i = H5Dcreate2(datagroup_id, "nu_i_polmodes", H5T_NATIVE_DOUBLE, polspace_id,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for(int iii=0;iii<pol_dims[0]*pol_dims[1]*pol_dims[2];iii++)
-	{pol_in[iii]=PetscImaginaryPart(nu_j[iii]);}
-      status = H5Dwrite (nupol_id_i, H5T_NATIVE_DOUBLE, polspace_id, polspace_id, H5P_DEFAULT, pol_in);
       status = H5Dclose(nupol_id_i);
-
-      status = H5Sclose(polspace_id);
-
-      delete[] pol_in;
-      delete[] xi_j;
-      delete[] nu_j;
+      
 
       //RELATIVE MODE POWER DATA
       hid_t pow_id,powspace_id;
@@ -549,15 +426,175 @@ int main(int argc,char* argv[])
       status = H5Dclose(pow_id);
 
       status = H5Sclose(powspace_id);
-      delete[] rel_pow_vals;  
+      delete[] rel_pow_vals;
 
-      status = H5Gclose(datagroup_id);
+      /************************************************************************************************************************************************************************************/
+
+      //EIGENVECTOR (INTERPOLATED) DATA
+      double *data_in = new double[geom.N_psi*geom.N_theta]; //Create data array for data input
+      double *pol_in = new double[geom.m_range*geom.N_psi]; //Create data array for data input
+      
+      PetscScalar *xi_j = new PetscScalar[geom.N_psi*geom.m_range];
+      PetscScalar *xi_full = new PetscScalar[geom.N_psi*geom.N_theta];
+
+      PetscScalar *nu_j = new PetscScalar[geom.N_psi*geom.m_range];
+      PetscScalar *nu_full = new PetscScalar[geom.N_psi*geom.N_theta];
+
+      PetscScalar *b_par = new PetscScalar[geom.N_psi*geom.N_theta];
+      PetscScalar *b_perp = new PetscScalar[geom.N_psi*geom.N_theta];
+      PetscScalar *b_wedge = new PetscScalar[geom.N_psi*geom.N_theta];
+
+      /***************************************************************************************************************************************************************************************/
 
 
       
-      /***************************************************************************************************************************************************************************************/
+      //Create the data space for the dataset.
+      dataspace_id = H5Screate_simple(3,data_dims,NULL);
 
-     
+      hsize_t countf[3] = { 1 , 1 , 1 } ;
+      hsize_t blockf[3] = { 1 , geom.N_psi , geom.N_theta } ;
+      hsize_t blockfp[3] = { 1 , geom.m_range , geom.N_psi } ;
+
+      hsize_t countd[1] = { 1 } ;
+      hsize_t blockd[1] = { geom.N_psi * geom.N_theta } ;
+      hsize_t offsetd[1] = { 0 } ;
+      hid_t memdata_id;
+      hsize_t memdata_dims[1]={geom.N_psi*geom.N_theta};
+      memdata_id = H5Screate_simple(1,memdata_dims,NULL);
+      status = H5Sselect_hyperslab (memdata_id, H5S_SELECT_SET, offsetd, NULL, countd, blockd);
+
+      hsize_t blockp[1] = { geom.m_range * geom.N_psi } ;
+      hid_t mempol_id;
+      hsize_t mempol_dims[1]={ geom.m_range * geom.N_psi };
+      mempol_id = H5Screate_simple(1,mempol_dims,NULL);
+      status = H5Sselect_hyperslab (mempol_id, H5S_SELECT_SET, offsetd, NULL, countd, blockp);
+      
+      for(int iii = 0 ; iii < nconv_mod ; iii++){
+
+
+	//Select eigenval and extract
+	sort_eigenvecs(eigenvec,xi_j,nu_j,geom,keep_indices,iii);
+
+	//Destroy vec. Needs rethinking a little if actually filter modes (with keep indices)
+	ierr = VecDestroy(&eigenvec[iii]); CHKERRQ(ierr);
+
+	//Rotate result so that Re(\xi_\perp) =/= 0 along line \theta=0
+	rotate(xi_j,nu_j,geom.N_psi,geom.m_range);
+
+	//Set eigenvector storage to zero
+	for(int iii=0;iii<geom.N_psi*geom.N_theta;iii++){xi_full[iii]=0.0;nu_full[iii]=0.0;}
+      
+	for(int jjj=0;jjj<geom.N_psi;jjj++){
+	  for(int m_count=0;m_count<geom.m_range;m_count++){
+	    for(int kkk=0;kkk<geom.N_theta;kkk++){
+		xi_full[jjj*geom.N_theta+kkk]+=xi_j[m_count*(geom.N_psi)+jjj]*(cos((geom.m_min+m_count)*equil.theta_grid[kkk])+PETSC_i*sin((geom.m_min+m_count)*equil.theta_grid[kkk]));
+		nu_full[jjj*geom.N_theta+kkk]+=nu_j[m_count*(geom.N_psi)+jjj]*(cos((geom.m_min+m_count)*equil.theta_grid[kkk])+PETSC_i*sin((geom.m_min+m_count)*equil.theta_grid[kkk]));
+	      }
+	  }
+	}
+
+	convert_to_mag(b_par,b_perp,b_wedge,xi_full,nu_full,equil,geom,1,geom.shape_order);
+
+	//Define space in file into which data is written
+	hsize_t offsetf[3] = { iii , 0 , 0 } ;
+	status = H5Sselect_hyperslab (dataspace_id, H5S_SELECT_SET, offsetf, NULL, countf, blockf);
+	  
+	//Create and write the displacement data.
+	xidata_id_r = H5Dopen2(datagroup_id, "xi_r", H5P_DEFAULT);	
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscRealPart(xi_full[jjj]);}
+	status = H5Dwrite(xidata_id_r, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(xidata_id_r);
+
+	xidata_id_i = H5Dopen2(datagroup_id, "xi_i", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscImaginaryPart(xi_full[jjj]);}
+	status = H5Dwrite(xidata_id_i, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(xidata_id_i);
+
+	nudata_id_r = H5Dopen2(datagroup_id, "nu_r", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscRealPart(nu_full[jjj]);}
+	status = H5Dwrite(nudata_id_r, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(nudata_id_r);
+
+	nudata_id_i = H5Dopen2(datagroup_id, "nu_i", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscImaginaryPart(nu_full[jjj]);}
+	status = H5Dwrite(nudata_id_i, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(nudata_id_i);
+
+	b_par_id_r = H5Dopen2(datagroup_id, "b_par_r", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscRealPart(b_par[jjj]);}
+	status = H5Dwrite (b_par_id_r, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_par_id_r);
+
+	b_par_id_i = H5Dopen2(datagroup_id, "b_par_i", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscImaginaryPart(b_par[jjj]);}
+	status = H5Dwrite (b_par_id_i, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_par_id_i);
+
+	b_perp_id_r = H5Dopen2(datagroup_id, "b_perp_r", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscRealPart(b_perp[jjj]);}
+	status = H5Dwrite (b_perp_id_r, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_perp_id_r);
+
+	b_perp_id_i = H5Dopen2(datagroup_id, "b_perp_i", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscImaginaryPart(b_perp[jjj]);}
+	status = H5Dwrite (b_perp_id_i, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_perp_id_i);
+
+	b_wedge_id_r = H5Dopen2(datagroup_id, "b_wedge_r", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscRealPart(b_wedge[jjj]);}
+	status = H5Dwrite (b_wedge_id_r, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_wedge_id_r);
+
+	b_wedge_id_i = H5Dopen2(datagroup_id, "b_wedge_i", H5P_DEFAULT);
+	for(int jjj=0;jjj<data_dims[1]*data_dims[2];jjj++){data_in[jjj]=PetscImaginaryPart(b_wedge[jjj]);}
+	status = H5Dwrite (b_wedge_id_i, H5T_NATIVE_DOUBLE, memdata_id, dataspace_id, H5P_DEFAULT, data_in);
+	status = H5Dclose(b_wedge_id_i);
+
+	//Define space in file into which data is written
+	status = H5Sselect_hyperslab (polspace_id, H5S_SELECT_SET, offsetf, NULL, countf, blockfp);
+
+	//Write polspace data
+	xipol_id_r = H5Dopen2(datagroup_id, "xi_r_polmodes", H5P_DEFAULT);
+	for(int jjj=0;jjj<pol_dims[1]*pol_dims[2];jjj++){pol_in[jjj]=PetscRealPart(xi_j[jjj]);}
+	status = H5Dwrite (xipol_id_r, H5T_NATIVE_DOUBLE, mempol_id, polspace_id, H5P_DEFAULT, pol_in);
+	status = H5Dclose(xipol_id_r);
+
+	xipol_id_i = H5Dopen2(datagroup_id, "xi_i_polmodes", H5P_DEFAULT);
+	for(int jjj=0;jjj<pol_dims[1]*pol_dims[2];jjj++){pol_in[jjj]=PetscImaginaryPart(xi_j[jjj]);}
+	status = H5Dwrite (xipol_id_i, H5T_NATIVE_DOUBLE, mempol_id, polspace_id, H5P_DEFAULT, pol_in);
+	status = H5Dclose(xipol_id_i);
+
+	nupol_id_r = H5Dopen2(datagroup_id, "nu_r_polmodes", H5P_DEFAULT);
+	for(int jjj=0;jjj<pol_dims[1]*pol_dims[2];jjj++){pol_in[jjj]=PetscRealPart(nu_j[jjj]);}
+	status = H5Dwrite (nupol_id_r, H5T_NATIVE_DOUBLE, mempol_id, polspace_id, H5P_DEFAULT, pol_in);
+	status = H5Dclose(nupol_id_r);
+
+	nupol_id_i = H5Dopen2(datagroup_id, "nu_i_polmodes", H5P_DEFAULT);
+	for(int jjj=0;jjj<pol_dims[1]*pol_dims[2];jjj++){pol_in[jjj]=PetscImaginaryPart(nu_j[jjj]);}
+	status = H5Dwrite (nupol_id_i, H5T_NATIVE_DOUBLE, mempol_id, polspace_id, H5P_DEFAULT, pol_in);
+	status = H5Dclose(nupol_id_i);	
+      }
+ 
+      status = H5Sclose(dataspace_id);
+      status = H5Sclose(polspace_id);
+      
+      delete[] eigenvec;
+      delete[] data_in;
+      delete[] xi_full;
+      delete[] nu_full;
+
+      delete[] b_par;
+      delete[] b_perp;
+      delete[] b_wedge;
+
+      delete[] pol_in;
+      delete[] xi_j;
+      delete[] nu_j;   
+
+      //Close datagroup
+      status = H5Gclose(datagroup_id);
+
+      //Close file
       status = H5Fclose(file_id);
     }
 

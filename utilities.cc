@@ -248,105 +248,52 @@ int calc_hermitian_diff(Mat M,int row_dim,int col_dim)
   return 0;
 }
 
-void normalise(PetscScalar perp_values[],PetscScalar wedge_values[],int N_r,int m_range,int num_eig,bool rotate)
+void rotate(PetscScalar perp_values[],PetscScalar wedge_values[],int N_r,int m_range)
 {
-  
-  PetscScalar max_val_perp,max_val_wedge;
-  for(int jjj=0;jjj<num_eig;jjj++)
-    {
-      max_val_perp=0.0; max_val_wedge=0.0;
+  PetscScalar max_val_perp = 0.0,max_val_wedge = 0.0;
       
-      for(int iii=0;iii<m_range*N_r;iii++)
-	{
-	  if(std::abs(perp_values[jjj*m_range*N_r+iii])>std::abs(max_val_perp)){max_val_perp=perp_values[jjj*m_range*N_r+iii];};
-	  if(std::abs(wedge_values[jjj*m_range*N_r+iii])>std::abs(max_val_wedge)){max_val_wedge=wedge_values[jjj*m_range*N_r+iii];};
-	}
+  for(int iii=0;iii<m_range*N_r;iii++)
+    {
+      if(std::abs(perp_values[iii])>std::abs(max_val_perp)){max_val_perp=perp_values[iii];};
+      if(std::abs(wedge_values[iii])>std::abs(max_val_wedge)){max_val_wedge=wedge_values[iii];};
+    }
 
-      if( !( std::abs(max_val_perp) == 0.0 ) ){ max_val_perp *= 1.0 / std::abs(max_val_perp) ;}
-      else if( !( std::abs(max_val_wedge) == 0.0 ) ){ max_val_perp = max_val_wedge / std::abs(max_val_wedge) ; }
-      else{ std::cout << "Shouldn't be able to get here (in func normalise) - something has gone terribly wrong!" << std::endl; }
+  if( !( std::abs(max_val_perp) == 0.0 ) ){ max_val_perp *= 1.0 / std::abs(max_val_perp) ;}
+  else if( !( std::abs(max_val_wedge) == 0.0 ) ){ max_val_perp = max_val_wedge / std::abs(max_val_wedge) ; }
+  else{ std::cout << "Shouldn't be able to get here (in func normalise) - something has gone terribly wrong!" << std::endl; }
 	    
-      for(int iii=0;iii<m_range*N_r;iii++)
-	{
-	  perp_values[jjj*m_range*N_r+iii] /= max_val_perp;
-	  wedge_values[jjj*m_range*N_r+iii] /= max_val_perp;
-	}
-    }
-      
-  /*
-  if(rotate==true)
+  for(int iii=0;iii<m_range*N_r;iii++)
     {
-      PetscScalar max_val_perp,max_val_wedge;
-      for(int jjj=0;jjj<num_eig;jjj++)
-	{
-	  max_val_perp=0.0; max_val_wedge=0.0;
-      
-	  for(int iii=0;iii<m_range*N_r;iii++)
-	    {
-	      if(std::abs(perp_values[jjj*m_range*N_r+iii])>std::abs(max_val_perp)){max_val_perp=perp_values[jjj*m_range*N_r+iii];};
-	      if(std::abs(wedge_values[jjj*m_range*N_r+iii])>std::abs(max_val_wedge)){max_val_wedge=wedge_values[jjj*m_range*N_r+iii];};
-	    }
-
-	  if(std::abs(max_val_perp)<std::abs(max_val_wedge) && !(std::abs(max_val_perp)==0.0)){max_val_perp*=std::abs(max_val_wedge)/std::abs(max_val_perp);}
-	  else if(std::abs(max_val_perp)==0.0){max_val_perp=max_val_wedge;}
-	    
-	  for(int iii=0;iii<m_range*N_r;iii++)
-	    {
-	      perp_values[jjj*m_range*N_r+iii]/=max_val_perp;
-	      wedge_values[jjj*m_range*N_r+iii]/=max_val_perp;
-	    }
-	}
+      perp_values[iii] /= max_val_perp;
+      wedge_values[iii] /= max_val_perp;
     }
-  else if(rotate==false)
-    {
-      double max_val;
-      for(int jjj=0;jjj<num_eig;jjj++)
-	{
-	  max_val=0.0;
-      
-	  for(int iii=0;iii<m_range*N_r;iii++)
-	    {
-	      if(std::abs(perp_values[jjj*m_range*N_r+iii])>max_val){max_val=std::abs(perp_values[jjj*m_range*N_r+iii]);};
-	      if(std::abs(wedge_values[jjj*m_range*N_r+iii])>max_val){max_val=std::abs(wedge_values[jjj*m_range*N_r+iii]);};
-	    }
 
-	  for(int iii=0;iii<m_range*N_r;iii++)
-	    {
-	      perp_values[jjj*m_range*N_r+iii]/=max_val;
-	      wedge_values[jjj*m_range*N_r+iii]/=max_val;
-	    }
-	}
-    }
-  */
 }
 
-void sort_eigenvecs(Vec eigenvecs[],PetscScalar xi_perp[],PetscScalar xi_wedge[],geom_shape geom,int num_vecs,int keep_indices[])
+void sort_eigenvecs(Vec eigenvecs[],PetscScalar xi_perp[],PetscScalar xi_wedge[],geom_shape geom,int keep_indices[], int index)
 {
  const PetscScalar *tmp_arr;
 
 
-  for(int iii=0;iii<num_vecs;iii++)
-    { 
-      VecGetArrayRead(eigenvecs[keep_indices[iii]],&tmp_arr);
+ VecGetArrayRead(eigenvecs[keep_indices[index]],&tmp_arr);
 
-      for(int jjj=0;jjj<geom.m_range;jjj++)
-	{
-	  fill_indices(geom.ind_perp_main,geom.ind_wedge_main,jjj+geom.m_min,geom.N_psi,geom.shape_order);
+ for(int jjj=0;jjj<geom.m_range;jjj++)
+   {
+     fill_indices(geom.ind_perp_main,geom.ind_wedge_main,jjj+geom.m_min,geom.N_psi,geom.shape_order);
 
-	  for(int kkk=0;kkk<geom.N_psi;kkk++)
-	    {
-	      if(geom.ind_perp_main[0][kkk]==-1){xi_perp[iii*geom.m_range*geom.N_psi+jjj*geom.N_psi+kkk]=0.0;}
-	      else{xi_perp[iii*geom.m_range*geom.N_psi+jjj*geom.N_psi+kkk]=tmp_arr[geom.pol_pos[jjj]+geom.ind_perp_main[0][kkk]];}
+     for(int kkk=0;kkk<geom.N_psi;kkk++)
+       {
+	 if(geom.ind_perp_main[0][kkk]==-1){xi_perp[jjj*geom.N_psi+kkk]=0.0;}
+	 else{xi_perp[jjj*geom.N_psi+kkk]=tmp_arr[geom.pol_pos[jjj]+geom.ind_perp_main[0][kkk]];}
 
-	      if(geom.ind_wedge_main[0][kkk]==-1){xi_wedge[iii*geom.m_range*geom.N_psi+jjj*geom.N_psi+kkk]=0.0;}
-	      else{xi_wedge[iii*geom.m_range*geom.N_psi+jjj*geom.N_psi+kkk]=tmp_arr[geom.pol_pos[jjj]+geom.ind_wedge_main[0][kkk]];}
-	    }
+	 if(geom.ind_wedge_main[0][kkk]==-1){xi_wedge[jjj*geom.N_psi+kkk]=0.0;}
+	 else{xi_wedge[jjj*geom.N_psi+kkk]=tmp_arr[geom.pol_pos[jjj]+geom.ind_wedge_main[0][kkk]];}
+       }
 
 
-	}
+   }
 
-      VecRestoreArrayRead(eigenvecs[keep_indices[iii]],&tmp_arr);
-    }
+ VecRestoreArrayRead(eigenvecs[keep_indices[index]],&tmp_arr);
 }
 
 

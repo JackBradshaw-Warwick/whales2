@@ -6,9 +6,6 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
   int N_psi=geom.N_psi;
   int N_theta=geom.N_theta;
   double tor_mod=static_cast<double>(geom.tor_mod);
-
-  std::string value;
-  read_in("analytical_type",value);
  
   std::complex<double> *perp_temp=new std::complex<double>[N_psi*N_theta];
   std::complex<double> *wedge_temp=new std::complex<double>[N_psi*N_theta];
@@ -24,7 +21,7 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
 	wedge_temp[jjj*N_theta+kkk]=xi_wedge[iii*N_psi*N_theta+jjj*N_theta+kkk] / sqrt( eq.g_pp[jjj*(geom.num_quad+1)*N_theta+kkk] / eq.mag_sq[jjj*(geom.num_quad+1)*N_theta+kkk] ) ;
       }}
 
-    if(value == "cylinder_theta" ){
+    if(geom.analytical_type == "cylinder_theta" ){
 
       /******************************************************************************************************************************************************************************************/
       //b-perp
