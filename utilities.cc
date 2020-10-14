@@ -53,6 +53,7 @@ void init_coeffs(matrix_coeffs* coeffs,geom_shape geom)
   coeffs->f_pp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pp,N_interp*N_theta);
   coeffs->f_dpdw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dpdw,N_interp*N_theta);
   coeffs->f_dpw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_dpw,N_interp*N_theta);
+  coeffs->f_pdw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pdw,N_interp*N_theta);
   coeffs->f_pw=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_pw,N_interp*N_theta);
   coeffs->f_wdp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_wdp,N_interp*N_theta);
   coeffs->f_wp=new std::complex<double>[N_interp*N_theta]; clean_grid(coeffs->f_wp,N_interp*N_theta);
@@ -155,6 +156,7 @@ void delete_full_matrix_coeffs(matrix_coeffs* coeffs)
   delete[] coeffs->f_pp; coeffs->f_pp=NULL;
   delete[] coeffs->f_dpdw; coeffs->f_dpdw=NULL;
   delete[] coeffs->f_dpw; coeffs->f_dpw=NULL;
+  delete[] coeffs->f_pdw; coeffs->f_pdw=NULL;
   delete[] coeffs->f_pw; coeffs->f_pw=NULL;
   delete[] coeffs->f_wdp; coeffs->f_wdp=NULL;
   delete[] coeffs->f_wp; coeffs->f_wp=NULL;
@@ -443,11 +445,7 @@ void fill_dim(int &dim_loc,int pol_mode,int N_psi,std::string shape_order)
   if(shape_order=="NHLC" || shape_order=="HLC"){
     dim_loc=2*N_psi-3;
   }
-  else if(shape_order=="LN"){
-    if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
-    else{dim_loc=2*N_psi-3;}
-  }
-  else if(shape_order=="HLN"){
+  else if(shape_order=="LN" || shape_order=="HLN"){
     if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
     else{dim_loc=2*N_psi-3;}
   }

@@ -130,6 +130,7 @@ struct matrix_coeffs
   std::complex<double>* f_pp; //[m_range*m_coup*N_interp]
   std::complex<double>* f_dpdw; //[m_range*m_coup*N_interp]
   std::complex<double>* f_dpw; //[m_range*m_coup*N_interp]
+  std::complex<double>* f_pdw; //[m_range*m_coup*N_interp]
   std::complex<double>* f_pw; //[m_range*m_coup*N_interp]
   std::complex<double>* f_wdp; //[m_range*m_coup*N_interp]
   std::complex<double>* f_wp; //[m_range*m_coup*N_interp]

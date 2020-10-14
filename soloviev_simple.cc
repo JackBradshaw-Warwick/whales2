@@ -17,13 +17,13 @@ double sol_height(double psi,double theta)
 
 void fill_sol_simp(equil_fields *equil,geom_shape geom)
 {
-  std::string value;
-  read_in("elong",value);  s_elong=std::stod( value );
-  read_in("triang",value);  s_triang=std::stod( value );
-  read_in("R_0",value);  s_R_0=std::stod( value );
-  read_in("min_rad",value);  s_min_rad=std::stod( value );
-  read_in("B_0",value);  s_B_0=std::stod( value );
-  read_in("alpha_sol",value);  s_alpha=std::stod( value );
+
+  s_elong=geom.elong;
+  s_triang=geom.triang;
+  s_R_0=geom.R_0;
+  s_min_rad=geom.min_rad;
+  s_B_0=geom.B_0;
+  s_alpha=geom.alpha_sol;
   s_inv_asp=s_min_rad/s_R_0;
 
   //Ensure f_psi is always sqrt( val > 0.0 )

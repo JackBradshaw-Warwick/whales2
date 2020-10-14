@@ -1,14 +1,8 @@
 #include "constants.h"
 
+double mu=0.8;
 
-//double con_tmp=0.60;
-//double rec=(0.5-con_tmp)+2.0;
-double con=2.0;
-
-double g_B_0,g_min_rad,g_alpha;
-int g_counter=0;
-
-double pol_flux_theta(double r)
+double pol_flux_theta(double r) //r not psi!!
 {
   //Never needs to be touched
   
@@ -19,18 +13,13 @@ double pol_flux_theta(double r)
   return 0.5*B_0*r*r;
 }
 
-double pol_flux_screw(double r)
+double pol_flux_screw(double r) //r not psi!!
 {
-  //std::string value;
-  //double B_0=1.0; 
-  //read_in("B_0",value); B_0=std::stod( value );
+  std::string value;
+  double min_rad=1.0; 
+  read_in("min_rad",value); min_rad=std::stod( value );
   
-  return 0.5*con*r*r;
-}
-
-double safety(double r)
-{
-  return 1.0/con;
+  return 0.5 * log( 1.0 + mu*mu*r*r ) / mu ;
 }
 
 double dens(double psi, double psi_max, geom_shape geom) //psi not r!
@@ -46,28 +35,24 @@ double dens(double psi, double psi_max, geom_shape geom) //psi not r!
   }
 }
 
-double pres(double r, double theta)
+double pres(double r, double theta) //r not psi!!
 {
-  std::string value;
-  double B_0=1.0; 
-  read_in("B_0",value); B_0=std::stod( value );
-
-  double beta_0=1.0; 
-  read_in("beta_0",value); beta_0=std::stod( value );
-
-  return  ( 0.5*B_0*B_0*beta_0 - B_0*B_0*r - con*con*r*r - 0.5*B_0*B_0*r*r ) / mu_0 ; 
+  return  ( 0.0 ) / mu_0 ; 
 }
 
-double f_psi(double r, double theta)
+double f_psi(double r, double theta) //r not psi!!
 {
   std::string value;
   double B_0=1.0; 
   read_in("B_0",value); B_0=std::stod( value );
+  double min_rad=1.0; 
+  read_in("min_rad",value); min_rad=std::stod( value );
   
   theta=1.0/0.0; //In case I accidentally put theta dependance in return again
-  return -B_0 * ( 1.0 + r ) ;
+  return -1.0 / ( 1.0 + mu*mu*r*r ) ;
 }
 
+/*
 //Are these even used? Check!
 double maj_rad(double psi,double theta)
 {
@@ -88,3 +73,4 @@ double height(double psi,double theta)
   
   return sqrt(2.0*psi/B_0)*sin(theta);
 }
+*/

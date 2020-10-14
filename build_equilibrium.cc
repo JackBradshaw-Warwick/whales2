@@ -222,21 +222,6 @@ void read_geom(geom_shape *geom)
     read_in("N_theta",value);
     if( !(value == "") ) { geom->N_theta = std::stoi( value ) ; }
     else { geom->N_theta = 4 ; }
-  
-    read_in("tor_mod",value);
-    if( !(value == "") ) { geom->tor_mod = std::stod( value ) ; }
-    else { geom->tor_mod = 0.0 ; }
-  
-    read_in("m_min",value);
-    if( !(value == "") ) { geom->m_min = std::stoi( value ) ; }
-    else { geom->m_min = 0 ; }
-  
-    read_in("m_max",value);
-    if( !(value == "") ) { geom->m_max = std::stoi( value ) ; }
-    else { geom->m_max = 1 ; }
-  
-    //Calculated here for convenience
-    geom->m_range = geom->m_max - geom->m_min ;
 
     read_in("num_quad",value);
     if( !(value == "") ) { geom->num_quad = std::stoi( value ) ; }
@@ -251,9 +236,24 @@ void read_geom(geom_shape *geom)
     if( !(value == "") ) { geom->quad_type = value ; }
     else { geom->quad_type = "gq" ; }
   
+    read_in("m_min",value);
+    if( !(value == "") ) { geom->m_min = std::stoi( value ) ; }
+    else { geom->m_min = 0 ; }
+  
+    read_in("m_max",value);
+    if( !(value == "") ) { geom->m_max = std::stoi( value ) ; }
+    else { geom->m_max = 1 ; }
+  
+    //Calculated here for convenience
+    geom->m_range = geom->m_max - geom->m_min ;
+  
     read_in("m_coup",value);
     if( !(value == "") ) { geom->m_coup = std::stoi( value ) ; }
     else { geom->m_coup = geom->m_range ; }
+
+    read_in("tor_mod",value);
+    if( !(value == "") ) { geom->tor_mod = std::stod( value ) ; }
+    else { geom->tor_mod = 0.0 ; }
 
     read_in("shape_order",geom->shape_order); //Can read directly in as string
     if( geom->shape_order == "" ) { geom->shape_order = "NHLC" ; } //Default
@@ -265,32 +265,6 @@ void read_geom(geom_shape *geom)
     if( geom->interp_order == "" ) { geom->interp_order = "Cubic_pol" ; }
 
     if( geom->analytical_type == "cylinder_theta" || geom->analytical_type == "cylinder_screw" ){ geom->m_coup = 0 ; }
-
-    read_in("dens_form",value);
-    if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
-    else { geom->dens_form = 0 ; }
-
-    read_in("A_dens",value);
-    if( !(value == "") ) { geom->A_dens = std::stod( value ) ; }
-    else { geom->A_dens = 1.0 ; }
-
-    assert( geom->A_dens > 0.0 );
-
-    read_in("B_dens",value);
-    if( !(value == "") ) { geom->B_dens = std::stod( value ) ; }
-    else { geom->B_dens = 0.0 ; }
-
-    assert( geom->B_dens < 1.0 );
-
-    read_in("mu",value);
-    if( !(value == "") ) { geom->mu = std::stod( value ) ; }
-    else { geom->mu = 0.0 ; }
-
-    assert( geom->mu >= 0.0 );
-
-    read_in("nu",value);
-    if( !(value == "") ) { geom->nu = std::stod( value ) ; }
-    else { geom->nu = 1.0 ; }
 
     read_in("dens_form",value);
     if( !(value == "") ) { geom->dens_form = std::stoi( value ) ; }
@@ -341,10 +315,18 @@ void read_geom(geom_shape *geom)
     read_in("triang",value);
     if( !(value == "") ) { geom->triang = std::stod( value ) ; }
     else { geom->triang = 0.0 ; }
-
+    
     read_in("alpha_sol",value);
     if( !(value == "") ) { geom->alpha_sol = std::stod( value ) ; }
     else { geom->alpha_sol = 1.0 ; }
+    
+    read_in("solov_A",value);
+    if( !(value == "") ) { geom->solov_A = std::stod( value ) ; }
+    else { geom->solov_A = 1.0 ; }
+
+    read_in("solov_C",value);
+    if( !(value == "") ) { geom->solov_C = std::stod( value ) ; }
+    else { geom->solov_C = 0.0 ; } 
 
     read_in("flux_max",value);
     if( !(value == "") ) { geom->flux_max = std::stod( value ) ; }

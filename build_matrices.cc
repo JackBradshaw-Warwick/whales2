@@ -310,6 +310,9 @@ void build_submatrices(Mat mats[],equil_fields eq,geom_shape* geom,matrix_coeffs
 	dw_dh[0]=true; dw_dh[1]=false;
 	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_dpw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
 
+	dw_dh[0]=false; dw_dh[1]=true;
+	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_pdw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
+
 	dw_dh[0]=false; dw_dh[1]=false;
 	fill_submatrix(mats[1],geom,gq_mod,eq.rad_interp,coeffs->f_pw,geom->ind_perp_main[i],geom->ind_wedge_sec[j],dim_sub,row_offset,col_offset,dw_dh,ADD_VALUES);
       }}
@@ -468,8 +471,10 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
 
       //Build f_dpw
       for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
+        //psi derivative
       deriv_1d(temp_2,temp_1,eq.rad_interp,N_interp,N_theta,true,deriv_order);
       for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
+        //
       for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.cc_0[iii] ;}
       calc_fourier_sym(temp_2,fourier_sym_1,N_interp,N_theta);
       if(m_diff>=0){for(int iii=0;iii<N_interp;iii++){coeffs->f_dpw[iii] = -fourier_sym_1[iii*fourier_size_sym+m_diff];}}
@@ -481,40 +486,26 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
       input_funcs_2[0]=fourier_sym_2; input_funcs_2[1]=fourier_sym_1; 
       for(int iii=0;iii<N_interp;iii++){coeffs->f_dpw[iii] -= dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
 
+      //Build f_pdw
       for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = sqrt( eq.g_pp[iii] * eq.mag_sq[iii] ) ;}
       calc_fourier_sym(temp_1,fourier_sym_1,N_interp,N_theta);
       calc_fourier_sym(eq.cc_1,fourier_sym_2,N_interp,N_theta);
       input_funcs_2[0]=fourier_sym_2; input_funcs_2[1]=fourier_sym_1; 
-      for(int iii=0;iii<N_interp;iii++){coeffs->f_dpw[iii] -= dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
+      for(int iii=0;iii<N_interp;iii++){coeffs->f_pdw[iii] = - dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
 
 
       //Build f_pw
-      deriv_1d(temp_2,eq.cc_1,eq.rad_interp,N_interp,N_theta,true,deriv_order);
+      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;} 
+      deriv_1d(temp_2,temp_1,eq.rad_interp,N_interp,N_theta,true,deriv_order);
       for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
-      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = sqrt( eq.mag_sq[iii] * eq.g_pp[iii] ) ;}
-      calc_fourier_sym(temp_1,fourier_sym_1,N_interp,N_theta);
-      calc_fourier_sym(temp_2,fourier_sym_2,N_interp,N_theta);
-      input_funcs_2[0]=fourier_sym_2; input_funcs_2[1]=fourier_sym_1; 
-      for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] = -dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
-
-      deriv_1d(temp_2,eq.cc_0,eq.rad_interp,N_interp,N_theta,true,deriv_order);
-      for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
-      for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
+      for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.cc_0[iii] ;} 
       calc_fourier_sym(eq.cc_1,fourier_sym_1,N_interp,N_theta);
       calc_fourier_sym(temp_2,fourier_sym_2,N_interp,N_theta);
-      input_funcs_2[0]=fourier_sym_1; input_funcs_2[1]=fourier_sym_2; 
-      for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] -= dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
-
-      deriv_1d(temp_2,eq.cc_2,eq.rad_interp,N_interp,N_theta,true,deriv_order);
-      for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
-      for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
-      calc_fourier_sym(temp_2,fourier_sym_2,N_interp,N_theta);
-      if(m_diff>=0){for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += fourier_sym_2[iii*fourier_size_sym+m_diff];}}
-      else{for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += std::conj(fourier_sym_2[iii*fourier_size_sym-m_diff]);}}
-
-      calc_fourier_sym(eq.cc_1,fourier_sym_1,N_interp,N_theta);
+      input_funcs_2[0]=fourier_sym_1; input_funcs_2[1]=fourier_sym_2;
+      for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] = dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
+      
       calc_fourier_sym(eq.cc_0,fourier_sym_2,N_interp,N_theta);
-      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.cc_1[iii] * eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
+      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.cc_1[iii] * eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}  
       calc_fourier_sym(temp_1,fourier_sym_3,N_interp,N_theta);
       input_funcs_3[0]=fourier_sym_1; input_funcs_3[1]=fourier_sym_2; input_funcs_3[2]=fourier_sym_3;
       for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += dpol_sq_xi(input_funcs_3,main_mod,sec_mod,N_interp,N_theta,iii);}
@@ -524,6 +515,13 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
       input_funcs_2[0]=fourier_sym_1; input_funcs_2[1]=fourier_sym_3;
       for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
 
+      deriv_1d(temp_2,eq.cc_2,eq.rad_interp,N_interp,N_theta,true,deriv_order);
+      for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
+      for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
+      calc_fourier_sym(temp_2,fourier_sym_1,N_interp,N_theta);
+      if(m_diff>=0){for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += fourier_sym_1[iii*fourier_size_sym+m_diff];}}
+      else{for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += std::conj(fourier_sym_1[iii*fourier_size_sym-m_diff]);}}
+      
       calc_fourier_sym(eq.cc_2,fourier_sym_1,N_interp,N_theta);
       for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.cc_1[iii] * eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
       calc_fourier_sym(temp_1,fourier_sym_2,N_interp,N_theta);
@@ -546,10 +544,8 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
 	for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += result[iii];}
     
       }
-
-      deriv_1d(temp_2,eq.pres,eq.rad_interp,N_interp,N_theta,true,deriv_order);
-      for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}} 
-      for(int iii=0; iii<N_interp * N_theta ;iii++){ temp_1[iii] = ( mu_0 * temp_2[iii] * eq.curv_psi[iii] / sqrt( eq.g_pp[iii] * eq.mag_sq[iii] ) ) - ( eq.neg_shear[iii] * eq.cc_4[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ) ;}
+ 
+      for(int iii=0; iii<N_interp * N_theta ;iii++){ temp_1[iii] = - ( eq.neg_shear[iii] * eq.cc_4[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ) ;}
       calc_fourier_sym(temp_1,fourier_sym_1,N_interp,N_theta);
       if(m_diff>=0){for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += fourier_sym_1[iii*fourier_size_sym+m_diff];}}
       else{for(int iii=0;iii<N_interp;iii++){coeffs->f_pw[iii] += std::conj(fourier_sym_1[iii*fourier_size_sym-m_diff]);}}
@@ -619,7 +615,7 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
 	coeffs->f_wp[iii]*=change_var;
 	coeffs->f_ww[iii]*=change_var;
 	}
-
+      
       for(int iii=0;iii<N_interp;iii++){
 	coeffs->f_dpp[iii]*= imag_unit * hall_const ;
 	coeffs->f_pp[iii]*= imag_unit * hall_const ;
@@ -667,10 +663,11 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
       input_funcs_2[0]=fourier_sym_3; input_funcs_2[1]=fourier_sym_2;
       for(int iii=0;iii<N_interp;iii++){coeffs->f_pp[iii] += dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
 
-
-      deriv_1d(temp_2,eq.pres,eq.rad_interp,N_interp,N_theta,true,deriv_order);
-      for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}} 
-      for(int iii=0; iii<N_interp * N_theta ;iii++){ temp_1[iii] = ( eq.cc_2[iii] * eq.curv_psi[iii] / eq.g_pp[iii] ) - ( mu_0 * temp_2[iii] * eq.cc_2[iii] / eq.mag_sq[iii] ) + ( eq.neg_shear[iii] * eq.cc_4[iii] / eq.jacob[iii] ) ;}
+      //Commented out lines refer to a pressure term.
+      //deriv_1d(temp_2,eq.pres,eq.rad_interp,N_interp,N_theta,true,deriv_order);
+      //for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}} 
+      //for(int iii=0; iii<N_interp * N_theta ;iii++){ temp_1[iii] = ( eq.cc_2[iii] * eq.curv_psi[iii] / eq.g_pp[iii] ) - ( mu_0 * temp_2[iii] * eq.cc_2[iii] / eq.mag_sq[iii] ) + ( eq.neg_shear[iii] * eq.cc_4[iii] / eq.jacob[iii] ) ;}
+      for(int iii=0; iii<N_interp * N_theta ;iii++){ temp_1[iii] = ( eq.cc_2[iii] * eq.curv_psi[iii] / eq.g_pp[iii] ) + ( eq.neg_shear[iii] * eq.cc_4[iii] / eq.jacob[iii] ) ;}
       calc_fourier_sym(temp_1,fourier_sym_1,N_interp,N_theta);
       if(m_diff>=0){for(int iii=0;iii<N_interp;iii++){coeffs->f_pp[iii]+=fourier_sym_1[iii*fourier_size_sym+m_diff];}}
       else{for(int iii=0;iii<N_interp;iii++){coeffs->f_pp[iii]+=std::conj(fourier_sym_1[iii*fourier_size_sym-m_diff]);}}
