@@ -445,11 +445,7 @@ void fill_dim(int &dim_loc,int pol_mode,int N_psi,std::string shape_order)
   if(shape_order=="NHLC" || shape_order=="HLC"){
     dim_loc=2*N_psi-3;
   }
-  else if(shape_order=="LN"){
-    if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
-    else{dim_loc=2*N_psi-3;}
-  }
-  else if(shape_order=="HLN"){
+  else if(shape_order=="LN" || shape_order=="HLN"){
     if(std::abs(pol_mode)==1){dim_loc=2*N_psi-2;}
     else{dim_loc=2*N_psi-3;}
   }

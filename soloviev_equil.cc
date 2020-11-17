@@ -85,18 +85,16 @@ int fill_sol(equil_fields *equil,geom_shape geom)
   int N_interp=geom.N_interp;
   int N_theta=geom.N_theta;
 
-
-  std::string value;
-  read_in("elong",value);  elong=std::stod( value );
-  read_in("triang",value);  triang=std::stod( value );
+  elong=geom.elong;
+  triang=geom.triang;
   del_zero=asin(triang);
 
-  read_in("R_0",value);  R_0=std::stod( value );
-  read_in("min_rad",value);  min_rad=std::stod( value );
+  R_0=geom.R_0;
+  min_rad=geom.min_rad;
   inv_asp=min_rad/R_0;
 
-  read_in("solov_A",value);  solov_A=std::stod( value );
-  read_in("solov_C",value);  solov_C=std::stod( value );
+  solov_A=geom.solov_A;
+  solov_C=geom.solov_C;
   flux_0= R_0 * R_0 * ( solov_A + solov_C * R_0 * R_0 ) ;
   solov_alpha=R_0*R_0*solov_A/flux_0;
 
@@ -360,7 +358,7 @@ int fill_sol(equil_fields *equil,geom_shape geom)
   for( int iii=0 ; iii < N_interp ; iii++ ){ for( int jjj=1 ; jjj < N_theta ; jjj++ ){ equil->dens[iii*N_theta+jjj] = equil->dens[iii*N_theta] ; }}
 
   double B_0,beta_0;
-  read_in("B_0",value); B_0=std::stod( value );
+  B_0=geom.B_0;
 
   beta_0 = 2.0 * solov_C * rad_max / ( B_0 * B_0 ) ; //beta_0 set by zero-pressure b.c.
 
