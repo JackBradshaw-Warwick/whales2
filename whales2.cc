@@ -222,7 +222,7 @@ int main(int argc,char* argv[])
   
   /************************************************************************************************************************************************************************************/
   /************************************************************************************************************************************************************************************/
-  //Calculate which solutions should be kept based on their mode numbers. Only master thread participates in post-processing
+  //Only master thread participates in post-processing
   
   if(!(my_rank==0))
     {
@@ -240,48 +240,22 @@ int main(int argc,char* argv[])
       int *all_pol_mods= new int[nconv];
 
       const PetscScalar *tmp_arr;
-
-      
       
       for(PetscInt iii=0;iii<nconv;iii++)
 	{
-	  //if(PetscRealPart(eigenval[iii])<0.0){}
-	  //else if(std::abs(PetscImaginaryPart(eigenval[iii]))>0.01*std::abs(PetscRealPart(eigenval[iii]))){}
-	  //else
-	  {
-	     
-	    int pol_mod=find_pol_mode(polmode_norm,geom.m_range,geom.m_min,eigenvec,iii,geom.dims_loc); //Needs updating with variable change
+	  //Find "main" pol_mod by calculating relative Fourier powers
+	  int pol_mod = find_pol_mode(polmode_norm,geom,eigenvec,iii) ;
+	    
+	  keep_indices[nconv_mod]=iii;
+	  all_pol_mods[iii]=pol_mod;
 
-	    //add escape condition here if pol_mode is not in required range 
-	    fill_indices(geom.ind_perp_main,geom.ind_wedge_main,pol_mod,geom.N_psi,geom.shape_order);
-	      
-	    ierr = VecGetArrayRead(eigenvec[iii],&tmp_arr);CHKERRQ(ierr);
-
-
-	    //Something wrong with filter for m=-1,0,1 modes. Deal with this. Also normalisation seems not to work - worth looking at
-	    //for(int jjj=0;jjj<m_req_num;jjj++)
+	  for(int jjj=0;jjj<geom.m_range;jjj++)
 	    {
-	      //for(int kkk=0;kkk<r_req_num;kkk++)
-	      {
-		//if(pol_mod==m_req[jjj])// && rad_mode==r_req[kkk])
-		{
-		  keep_indices[nconv_mod]=iii;
-		  all_pol_mods[iii]=pol_mod;
-
-		  for(int jjj=0;jjj<geom.m_range;jjj++)
-		    {
-		      rel_pow_vals[nconv_mod*geom.m_range+jjj]=polmode_norm[jjj];
-		    }
-		      
-		  nconv_mod++;
-		}
-	      }
+	      rel_pow_vals[nconv_mod*geom.m_range+jjj]=polmode_norm[jjj];
 	    }
-
-	  }
+		      
+	  nconv_mod++;
 	}
-
-
 
       //ierr = VecView(eigenvec[keep_indices[0]],PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
@@ -476,7 +450,7 @@ int main(int argc,char* argv[])
 	sort_eigenvecs(eigenvec,xi_j,nu_j,geom,keep_indices,iii);
 
 	//Destroy vec. Needs rethinking a little if actually filter modes (with keep indices)
-	ierr = VecDestroy(&eigenvec[iii]); CHKERRQ(ierr);
+	ierr = VecDestroy(&eigenvec[iii]); CHKERRQ(ierr);	
 
 	//Rotate result so that Re(\xi_\perp) =/= 0 along line \theta=0
 	rotate(xi_j,nu_j,geom.N_psi,geom.m_range);

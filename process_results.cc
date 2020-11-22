@@ -175,41 +175,34 @@ void convert_to_mag(std::complex<double> b_par[],std::complex<double> b_perp[],s
 
 
 
-int find_pol_mode(PetscReal polmode_norm[],int m_range,int m_min,Vec eigenvectors[],int particular_val,int dim_locs[])
+int find_pol_mode(PetscReal polmode_norm[],geom_shape geom,Vec eigenvectors[],int particular_val)
 {
   PetscErrorCode ierr;
   const PetscScalar *tmp_arr;
   
   ierr = VecGetArrayRead(eigenvectors[particular_val],&tmp_arr);CHKERRQ(ierr);
-  
-  for(int jjj=0;jjj<m_range;jjj++)
-    {
-      polmode_norm[jjj]=0.0;
-    }
-	  
-  int m_count=m_min;
-  int k_offset=0;
-  int k_range=0;
-  
-  for(int jjj=0;jjj<m_range;jjj++)
-    {
-      //Iterate through one "m-value" of the eigenvalue
-      if(m_count==0){k_range=dim_locs[0];}
-      else if(std::abs(m_count)==1 || std::abs(m_count)==2){k_range=dim_locs[1];}
-      else{k_range=dim_locs[2];}
 
-      for(int kkk=0;kkk<k_range;kkk++)
+  //Clean polmode
+  for(int jjj=0;jjj<geom.m_range;jjj++){ polmode_norm[jjj]=0.0; }
+  
+  for(int jjj=0;jjj<geom.m_range;jjj++)
+    {
+      fill_indices(geom.ind_perp_main,geom.ind_wedge_main,jjj+geom.m_min,geom.N_psi,geom.shape_order);
+      
+      for(int kkk=0;kkk<geom.N_psi;kkk++)
 	{
-	  polmode_norm[jjj]+=PetscRealPart(tmp_arr[k_offset+kkk])*PetscRealPart(tmp_arr[k_offset+kkk])+PetscImaginaryPart(tmp_arr[k_offset+kkk])*PetscImaginaryPart(tmp_arr[k_offset+kkk]);
+	  if(geom.ind_perp_main[0][kkk] == -1){}
+	  else{polmode_norm[jjj] += std::abs(tmp_arr[geom.pol_pos[jjj] + geom.ind_perp_main[0][kkk]]) * std::abs(tmp_arr[geom.pol_pos[jjj] + geom.ind_perp_main[0][kkk]]);}
+	  
+	  if(geom.ind_wedge_main[0][kkk] == -1){}
+	  else{polmode_norm[jjj] += std::abs(tmp_arr[geom.pol_pos[jjj] + geom.ind_wedge_main[0][kkk]]) * std::abs(tmp_arr[geom.pol_pos[jjj] + geom.ind_wedge_main[0][kkk]]);}
 	}
-      k_offset+=k_range;
-      m_count+=1; //Check this properly as added without testing, but makes sense!!
     }
 
-  int max_index=m_min;
-  for(int jjj=0;jjj<m_range;jjj++)
+  int max_index=geom.m_min;
+  for(int jjj=0;jjj<geom.m_range;jjj++)
     {
-      if(polmode_norm[jjj]>polmode_norm[(max_index-m_min)]){max_index=m_min+jjj;}
+      if(polmode_norm[jjj]>polmode_norm[(max_index-geom.m_min)]){max_index=geom.m_min+jjj;}
     }
 
   return max_index;
