@@ -491,13 +491,15 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
       calc_fourier_sym(temp_1,fourier_sym_1,N_interp,N_theta);
       calc_fourier_sym(eq.cc_1,fourier_sym_2,N_interp,N_theta);
       input_funcs_2[0]=fourier_sym_2; input_funcs_2[1]=fourier_sym_1; 
-      for(int iii=0;iii<N_interp;iii++){coeffs->f_pdw[iii] = - dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
+      for(int iii=0;iii<N_interp;iii++){coeffs->f_pdw[iii] = dpol_xi(input_funcs_2,fg_real,main_mod,sec_mod,N_interp,N_theta,iii);}
 
 
       //Build f_pw
-      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;} 
+      for(int iii=0;iii<N_interp*N_theta;iii++){temp_1[iii] = eq.jacob[iii] * sqrt( eq.g_pp[iii] / eq.mag_sq[iii] ) ;}
+        //psi derivative
       deriv_1d(temp_2,temp_1,eq.rad_interp,N_interp,N_theta,true,deriv_order);
       for(int iii=0;iii<N_interp;iii++){for(int jjj=0;jjj<N_theta;jjj++){temp_2[iii*N_theta+jjj] *= eq.drad_dpsi[iii] ;}}
+        //
       for(int iii=0;iii<N_interp*N_theta;iii++){temp_2[iii] *= eq.cc_0[iii] ;} 
       calc_fourier_sym(eq.cc_1,fourier_sym_1,N_interp,N_theta);
       calc_fourier_sym(temp_2,fourier_sym_2,N_interp,N_theta);
@@ -602,7 +604,6 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
       input_real_2[0]=temp_1; input_real_2[1]=temp_2;
       dpar_xi(input_real_2,result,fg_real,geom,eq,main_mod,sec_mod);
       for(int iii=0;iii<N_interp;iii++){coeffs->f_ww[iii] -= result[iii];}
-
       
       //Change equation variable to s = sqrt(psi)
       double change_var;
@@ -761,7 +762,6 @@ void build_coeffs(equil_fields eq,geom_shape geom,matrix_coeffs* coeffs,int main
 	coeffs->f_ww[iii]*=change_var;
       }
     }
-
 
   delete[] temp_1;
   delete[] temp_2;
