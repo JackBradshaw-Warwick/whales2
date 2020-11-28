@@ -130,6 +130,8 @@ int main(int argc,char* argv[])
     ierr = PEPSetFromOptions(pep);CHKERRQ(ierr);
     //ierr = PEPSetUp(pep);CHKERRQ(ierr);
 
+    ierr = PEPSetScale(pep,PEP_SCALE_SCALAR,PETSC_DEFAULT,NULL,NULL,NULL,NULL) ; CHKERRQ(ierr); //
+
     ierr = PEPSolve(pep);CHKERRQ(ierr);
     ierr = PEPGetConverged(pep,&nconv);CHKERRQ(ierr);
   }
