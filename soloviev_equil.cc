@@ -231,6 +231,7 @@ int fill_sol(equil_fields *equil,geom_shape geom)
 
   double rad_max = flux_max * flux_0 ;
   double rad_min = rad_low_rat * flux_max * flux_0 ;
+  assert( ( 0.5 * R_0 * R_0 * geom.B_0 * geom.B_0 / solov_A ) > rad_max ) ;
   
   fill_rad( equil, geom, rad_max, rad_min ) ;
   rad_to_psi( equil, geom.N_psi, geom.N_interp );
