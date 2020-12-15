@@ -74,6 +74,6 @@ const double gq18weigh[18] = { 0.0216160135264833 , 0.0497145488949698 , 0.07642
 //Code parameters
 
   // rad_low_rat * min_rad is the first radial point (to avoid numerical issues near the magnetic axis)
-const double rad_low_rat = 1.0e-8 ; 
+const double rad_low_rat = 1.0e-2 ; 
 
 #endif
