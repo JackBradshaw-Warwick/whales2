@@ -17,7 +17,7 @@ void read_geom(geom_shape *geom)
     if( geom->numerical_type == "" ) { geom->numerical_type = "whales" ; }
 
     read_in("input_filepath",geom->input_filepath);
-    if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
+    if( geom->input_filepath == "" ) { geom->input_filepath = "./results/data.h5" ; }  
   }
   else { std::cout << "Fill_type is not recognised as it has been entered" << std::endl; }
 
@@ -170,7 +170,7 @@ void read_geom(geom_shape *geom)
     status = H5Fclose(file_id);
 
     read_in("output_dir",geom->output_dir);
-    if( geom->output_dir == "" ) { geom->output_dir = "./Results/" ; }
+    if( geom->output_dir == "" ) { geom->output_dir = "./results/" ; }
 
     read_in("results_filename",geom->results_filename);
     if( geom->results_filename == "" ) { geom->results_filename = "data.h5" ; }
@@ -192,7 +192,7 @@ void read_geom(geom_shape *geom)
       geom->numerical_type = "whales" ;
 
       read_in("input_filepath",geom->input_filepath);
-      if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
+      if( geom->input_filepath == "" ) { geom->input_filepath = "./results/data.h5" ; }  
     }
 
     geom->write_mats = 0 ; //Default value
@@ -333,7 +333,7 @@ void read_geom(geom_shape *geom)
     else { geom->flux_max = 1.0 ; }
 
     read_in("output_dir",geom->output_dir);
-    if( geom->output_dir == "" ) { geom->output_dir = "./Results/" ; }
+    if( geom->output_dir == "" ) { geom->output_dir = "./results/" ; }
 
     read_in("results_filename",geom->results_filename);
     if( geom->results_filename == "" ) { geom->results_filename = "data.h5" ; }
@@ -355,7 +355,7 @@ void read_geom(geom_shape *geom)
       geom->numerical_type = "whales" ;
 
       read_in("input_filepath",geom->input_filepath);
-      if( geom->input_filepath == "" ) { geom->input_filepath = "./Results/data.h5" ; }  
+      if( geom->input_filepath == "" ) { geom->input_filepath = "./results/data.h5" ; }  
     }
 
     geom->write_mats = 0 ; //Default value
